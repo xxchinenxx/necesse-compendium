@@ -1,0 +1,2144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Necesse Compendium — Item & Source Lookup</title>
+<style>
+  :root{
+    --ink-black:#15140f;
+    --parchment:#e7d9b4;
+    --parchment-light:#f1e6c8;
+    --parchment-dark:#d2c19a;
+    --forest:#23311f;
+    --forest-deep:#161f14;
+    --rune-gold:#c9952f;
+    --rune-gold-bright:#e8b955;
+    --blood:#7a2424;
+    --blood-bright:#a83434;
+    --slate:#2c3b46;
+    --slate-light:#42596a;
+    --line:#8a7445;
+  }
+
+  *{box-sizing:border-box;}
+
+  body{
+    margin:0;
+    background:var(--forest-deep);
+    background-image:
+      radial-gradient(circle at 15% 20%, rgba(201,149,47,0.06), transparent 40%),
+      radial-gradient(circle at 85% 80%, rgba(122,36,36,0.07), transparent 45%);
+    color:var(--parchment);
+    font-family:'Georgia','Iowan Old Style',serif;
+    min-height:100vh;
+  }
+
+  .wrap{ max-width:980px; margin:0 auto; padding:28px 18px 80px; }
+
+  /* HEADER */
+  header{
+    text-align:center;
+    padding:22px 16px 28px;
+    margin-bottom:24px;
+    position:relative;
+    border-bottom:2px solid var(--line);
+  }
+  header::before, header::after{
+    content:"❖";
+    color:var(--rune-gold);
+    font-size:14px;
+    position:absolute;
+    bottom:-11px;
+    left:50%;
+    transform:translateX(-50%);
+    background:var(--forest-deep);
+    padding:0 10px;
+  }
+  .crest{
+    font-size:34px;
+    letter-spacing:6px;
+    text-transform:uppercase;
+    font-family:'Trebuchet MS','Segoe UI',sans-serif;
+    font-weight:800;
+    color:var(--rune-gold-bright);
+    text-shadow:0 2px 0 #00000080, 0 0 18px rgba(232,185,85,0.25);
+    margin:0;
+  }
+  .crest span{ color:var(--parchment); }
+  .subtitle{
+    margin:8px 0 0;
+    color:var(--parchment-dark);
+    font-size:13px;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    font-family:'Trebuchet MS','Segoe UI',sans-serif;
+  }
+
+  /* SEARCH */
+  .search-box{ position:relative; margin-bottom:18px; }
+  #searchInput{
+    width:100%;
+    padding:16px 50px 16px 20px;
+    font-size:18px;
+    font-family:'Georgia',serif;
+    background:var(--parchment-light);
+    color:var(--ink-black);
+    border:3px solid var(--line);
+    border-radius:3px;
+    outline:none;
+    box-shadow:inset 0 2px 6px rgba(0,0,0,0.25);
+  }
+  #searchInput::placeholder{ color:#6b5d3c; font-style:italic; }
+  #searchInput:focus{ border-color:var(--rune-gold); box-shadow:inset 0 2px 6px rgba(0,0,0,0.25), 0 0 0 3px rgba(201,149,47,0.25); }
+  .search-icon{ position:absolute; right:16px; top:50%; transform:translateY(-50%); font-size:20px; color:#6b5d3c; pointer-events:none; }
+
+  /* FILTER CHIPS */
+  .filters{ display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-bottom:28px; }
+  .chip{
+    padding:7px 16px;
+    border:1px solid var(--line);
+    border-radius:20px;
+    background:rgba(231,217,180,0.07);
+    color:var(--parchment-dark);
+    font-size:13px;
+    font-family:'Trebuchet MS','Segoe UI',sans-serif;
+    letter-spacing:0.5px;
+    cursor:pointer;
+    transition:all 0.15s ease;
+    user-select:none;
+  }
+  .chip:hover{ background:rgba(201,149,47,0.15); color:var(--parchment); }
+  .chip.active{
+    background:var(--rune-gold);
+    color:var(--forest-deep);
+    border-color:var(--rune-gold-bright);
+    font-weight:700;
+  }
+
+  /* RESULTS META */
+  .results-meta{ text-align:center; color:var(--parchment-dark); font-size:13px; font-style:italic; margin-bottom:18px; min-height:18px; }
+
+  /* CARD GRID */
+  .grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:16px; }
+
+  .card{
+    background:linear-gradient(180deg, var(--parchment-light), var(--parchment));
+    border:2px solid var(--line);
+    border-radius:6px;
+    padding:16px 18px;
+    color:var(--ink-black);
+    cursor:pointer;
+    transition:transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+    box-shadow:0 3px 0 rgba(0,0,0,0.3), inset 0 0 0 1px rgba(255,255,255,0.15);
+    position:relative;
+    overflow:hidden;
+  }
+  .card::before{
+    content:"";
+    position:absolute; top:0; left:0; width:5px; height:100%;
+    background:var(--cat-color, var(--rune-gold));
+  }
+  .card:hover{
+    transform:translateY(-3px);
+    box-shadow:0 8px 14px rgba(0,0,0,0.35), inset 0 0 0 1px rgba(255,255,255,0.2);
+    border-color:var(--rune-gold);
+  }
+
+  .card-top{ display:flex; align-items:center; gap:10px; margin-bottom:6px; }
+  .card-icon{ font-size:26px; line-height:1; }
+  .card-name{ font-size:18px; font-weight:700; margin:0; color:var(--forest); }
+  .card-cat{
+    display:inline-block;
+    margin-top:2px;
+    font-size:10.5px;
+    letter-spacing:1px;
+    text-transform:uppercase;
+    font-family:'Trebuchet MS','Segoe UI',sans-serif;
+    color:#fff;
+    background:var(--cat-color, var(--rune-gold));
+    padding:2px 8px;
+    border-radius:10px;
+  }
+  .card-summary{ font-size:13.5px; color:#4a4126; margin:8px 0 0; line-height:1.4; font-style:italic; }
+  .card-hint{ margin-top:10px; font-size:12px; color:#6b5d3c; border-top:1px dashed #8a7445aa; padding-top:8px; }
+
+  /* CATEGORY COLORS */
+  .cat-Crop,.cat-Crop-Ingredient,.cat-Crop-Raw-Food{ --cat-color:#5c7a3a; }
+  .cat-Fruit,.cat-Fruit-Raw-Food,.cat-Fruit-Crop{ --cat-color:#5c7a3a; }
+  .cat-Flower{ --cat-color:#a8447a; }
+  .cat-Ingredient{ --cat-color:#a06a26; }
+  .cat-Raw-Food{ --cat-color:#8a5a2e; }
+  .cat-Fish{ --cat-color:#2c6b8a; }
+  .cat-Cooked-Food{ --cat-color:#c46b1a; }
+  .cat-Boss,.cat-Boss-Duo{ --cat-color:#7a2424; }
+  .cat-Incursion-Boss{ --cat-color:#9e2020; }
+  .cat-Biome{ --cat-color:#1f5c3a; }
+  .cat-Crafting-Station{ --cat-color:#42596a; }
+  .cat-Ore{ --cat-color:#5a4a2a; }
+  .cat-Bar{ --cat-color:#7a6030; }
+  .cat-Gem,.cat-Mineral{ --cat-color:#4a3a7a; }
+  .cat-Tool{ --cat-color:#2a5a6a; }
+  .cat-Weapon,.cat-Summon-Weapon{ --cat-color:#6a2a2a; }
+  .cat-Ammo{ --cat-color:#8a4a1a; }
+  .cat-Armor,.cat-Item-Set-Unlock,.cat-Cosmetic{ --cat-color:#2a4a6a; }
+  .cat-Trinket,.cat-Trinket-Set{ --cat-color:#4a2a6a; }
+  .cat-Trinket-Slot-Unlock{ --cat-color:#6a1a6a; }
+  .cat-Enchantment{ --cat-color:#1a5a6a; }
+  .cat-Mount{ --cat-color:#3a5a3a; }
+  .cat-Pet{ --cat-color:#5a3a6a; }
+  .cat-Storage-Item,.cat-Misc-Item{ --cat-color:#3a4a5a; }
+  .cat-Building,.cat-Furniture{ --cat-color:#5a4a2a; }
+  .cat-Wiring{ --cat-color:#2a5a4a; }
+  .cat-Location,.cat-Mini-Biome{ --cat-color:#1f4a3a; }
+
+  /* MODAL */
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(10,10,8,0.78);
+    display:none; align-items:center; justify-content:center;
+    padding:20px; z-index:100;
+    backdrop-filter:blur(2px);
+  }
+  .modal-overlay.show{ display:flex; }
+  .modal{
+    background:linear-gradient(180deg, var(--parchment-light), var(--parchment-dark));
+    border:3px solid var(--rune-gold);
+    border-radius:8px;
+    max-width:560px; width:100%;
+    max-height:85vh;
+    overflow-y:auto;
+    padding:26px 28px 24px;
+    color:var(--ink-black);
+    position:relative;
+    box-shadow:0 20px 60px rgba(0,0,0,0.5);
+  }
+  .modal-close{
+    position:absolute; top:14px; right:16px;
+    background:none; border:none; font-size:22px;
+    cursor:pointer; color:#5a4f30; line-height:1;
+  }
+  .modal-close:hover{ color:var(--blood); }
+  .modal-header{ display:flex; align-items:center; gap:14px; margin-bottom:4px; }
+  .modal-icon{ font-size:38px; }
+  .modal-title{ font-size:26px; font-weight:800; color:var(--forest); margin:0; }
+  .modal-cat{
+    display:inline-block; margin-top:6px;
+    font-size:11px; letter-spacing:1px; text-transform:uppercase;
+    font-family:'Trebuchet MS','Segoe UI',sans-serif;
+    color:#fff; background:var(--cat-color, var(--rune-gold));
+    padding:3px 10px; border-radius:10px;
+  }
+  .modal-summary{ margin:14px 0 18px; font-style:italic; color:#4a4126; border-left:3px solid var(--rune-gold); padding-left:12px; }
+  .section-label{
+    font-family:'Trebuchet MS','Segoe UI',sans-serif;
+    font-size:12px; letter-spacing:1.5px; text-transform:uppercase;
+    color:var(--blood); font-weight:700; margin:18px 0 8px;
+  }
+  .source-item{
+    background:rgba(255,255,255,0.35);
+    border:1px solid #8a7445aa;
+    border-radius:4px;
+    padding:10px 12px;
+    margin-bottom:8px;
+    font-size:14.5px;
+    line-height:1.45;
+  }
+  .source-type{
+    font-weight:700; color:var(--forest);
+    font-family:'Trebuchet MS','Segoe UI',sans-serif;
+    font-size:12px; text-transform:uppercase; letter-spacing:0.5px;
+    display:block; margin-bottom:2px;
+  }
+  .used-for-list{ margin:0; padding-left:20px; font-size:14px; line-height:1.6; }
+
+  /* EMPTY STATE */
+  .empty-state{ text-align:center; padding:60px 20px; color:var(--parchment-dark); }
+  .empty-state .glyph{ font-size:40px; opacity:0.6; margin-bottom:10px; }
+
+  /* FOOTER */
+  footer{
+    text-align:center; margin-top:50px; padding-top:18px;
+    border-top:1px solid var(--line);
+    color:var(--parchment-dark); font-size:12px; font-style:italic;
+  }
+
+  @media (max-width:480px){
+    .crest{ font-size:24px; letter-spacing:3px; }
+    .grid{ grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1 class="crest"><span>NECESSE</span> COMPENDIUM</h1>
+    <p class="subtitle">Item &amp; Source Lookup — Crops · Food · Bosses · Ores · Weapons · Armor · Incursions · Enchantments</p>
+  </header>
+
+  <div class="search-box">
+    <input type="text" id="searchInput" placeholder="Search any item, boss, food, enchantment... (e.g. Lemon Tart, Queen Spider, Wizard Socket)" autocomplete="off">
+    <span class="search-icon">🔍</span>
+  </div>
+
+  <div class="filters" id="filters"></div>
+  <div class="results-meta" id="resultsMeta"></div>
+  <div class="grid" id="grid"></div>
+
+  <footer>
+    Compiled from the official Necesse Wiki (necessewiki.com). Game by Fair Games.<br>
+    This is a fan-made reference tool, not an official product.
+  </footer>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modalContent"></div>
+</div>
+
+<script>
+// NECESSE COMPENDIUM DATA
+// Compiled and cross-checked against necessewiki.com (official wiki)
+// Scope: Crops & Farming, Fruit Trees, Seeds, Sugar/Cooking ingredients,
+// Bosses (summons + drops), Biomes (resources/enemies), Caves,
+// Crafting Stations, and common Raw Food items.
+// Note: This is a curated subset focused on "where do I get X" lookups,
+// not a 1:1 mirror of the wiki's 2,600+ articles.
+
+const NECESSE_DB = [
+
+// ===================== CROPS (grown from seeds on Farmland) =====================
+{
+  name: "Wheat", category: "Crop", icon: "🌾",
+  summary: "The bread-and-butter cash crop. Sells highest to a happy Farmer settler.",
+  sources: [
+    { type: "Farming", detail: "Grow from Wheat Seeds on Farmland. Fastest-growing crop (4–7 min per stage vs 7–10 min for others)." },
+    { type: "Seeds from", detail: "Wheat Seeds found in Forest Biome chests, or bought from Farmer." }
+  ],
+  usedFor: ["Flour (milled at Grain Mill)", "Bread", "Animal feed (cows/sheep via Feeding Trough)"]
+},
+{
+  name: "Sugar Beet", category: "Crop", icon: "🟣",
+  summary: "Necesse's source of Sugar — there is no 'Sugar Cane' in this game, Sugar Beet fills that role.",
+  sources: [
+    { type: "Wild find", detail: "Found growing wild in Snow Caves and Swamp Caves." },
+    { type: "Farming", detail: "Plant Sugar Beet Seeds on Farmland." },
+    { type: "Seeds from", detail: "Sugar Beet Seeds found in chests in Snow Caves and Swamp Caves, or bought from Farmer (after defeating Queen Spider)." }
+  ],
+  usedFor: ["Sugar (milled at Grain Mill)", "Cheesy Beet Bowl"]
+},
+{
+  name: "Sugar", category: "Ingredient", icon: "🍬",
+  summary: "Non-consumable cooking ingredient. Made, not gathered directly.",
+  sources: [
+    { type: "Crafting", detail: "Process Sugar Beet OR Honey at a Grain Mill (15 sec per item)." }
+  ],
+  usedFor: ["Lemon Tart", "Cookies", "Donut", "Candy Apple", "Candy Cane", "many Gourmet dishes"]
+},
+{
+  name: "Carrot", category: "Crop", icon: "🥕",
+  sources: [
+    { type: "Farming", detail: "Grow from Carrot Seeds on Farmland." },
+    { type: "Seeds from", detail: "Carrot Seeds — Forest Biome chests / Farmer." }
+  ],
+  usedFor: ["Cooking ingredient", "Animal feed"]
+},
+{
+  name: "Potato", category: "Crop", icon: "🥔",
+  sources: [
+    { type: "Farming", detail: "Grow from Potato Seeds on Farmland." },
+    { type: "Seeds from", detail: "Potato Seeds — Forest Biome chests / Farmer." }
+  ],
+  usedFor: ["Cooking ingredient"]
+},
+{
+  name: "Tomato", category: "Crop", icon: "🍅",
+  sources: [
+    { type: "Farming", detail: "Grow from Tomato Seeds on Farmland." },
+    { type: "Seeds from", detail: "Tomato Seeds — Forest Biome chests / Farmer." }
+  ],
+  usedFor: ["Cooking ingredient"]
+},
+{
+  name: "Onion", category: "Crop", icon: "🧅",
+  sources: [
+    { type: "Farming", detail: "Grow from Onion Seeds on Farmland." },
+    { type: "Seeds from", detail: "Onion Seeds — Forest Biome chests / Farmer." }
+  ],
+  usedFor: ["Cooking ingredient"]
+},
+{
+  name: "Cabbage", category: "Crop", icon: "🥬",
+  sources: [
+    { type: "Farming", detail: "Grow from Cabbage Seeds on Farmland." },
+    { type: "Seeds from", detail: "Cabbage Seeds — Forest Biome chests / Farmer." }
+  ],
+  usedFor: ["Cooking ingredient"]
+},
+{
+  name: "Eggplant", category: "Crop", icon: "🍆",
+  sources: [
+    { type: "Farming", detail: "Grow from Eggplant Seeds on Farmland." },
+    { type: "Seeds from", detail: "Eggplant Seeds — found later-game biome chests / Farmer." }
+  ],
+  usedFor: ["Cooking ingredient"]
+},
+{
+  name: "Pumpkin", category: "Crop", icon: "🎃",
+  sources: [
+    { type: "Farming", detail: "Grow from Pumpkin Seeds on Farmland." },
+    { type: "Seeds from", detail: "Pumpkin Seeds — Forest/Snow Biome chests / Farmer." }
+  ],
+  usedFor: ["Cooking ingredient", "Decoration items"]
+},
+{
+  name: "Corn", category: "Crop", icon: "🌽",
+  sources: [
+    { type: "Farming", detail: "Grow from Corn Seeds on Farmland." },
+    { type: "Seeds from", detail: "Corn Seeds — Forest Biome chests / Farmer." }
+  ],
+  usedFor: ["Cooking ingredient", "Popcorn"]
+},
+{
+  name: "Rice", category: "Crop / Ingredient", icon: "🍚",
+  sources: [
+    { type: "Farming", detail: "Grow from Rice Seeds on Farmland (Swamp-leaning crop)." },
+    { type: "Milling", detail: "Rice Seeds can be milled directly at the Grain Mill into Rice." }
+  ],
+  usedFor: ["Sushi Rolls", "Cooking ingredient"]
+},
+{
+  name: "Chili Pepper", category: "Crop", icon: "🌶️",
+  sources: [
+    { type: "Farming", detail: "Grow from Chili Pepper Seeds on Farmland (Desert-leaning crop)." },
+    { type: "Seeds from", detail: "Desert Biome chests / Farmer (later game)." }
+  ],
+  usedFor: ["Spicy cooking recipes, movement-speed buff foods"]
+},
+{
+  name: "Strawberry", category: "Crop", icon: "🍓",
+  sources: [
+    { type: "Farming", detail: "Grow from Strawberry Seeds on Farmland." },
+    { type: "Seeds from", detail: "Forest Biome chests / Farmer." }
+  ],
+  usedFor: ["Cooking ingredient"]
+},
+{
+  name: "Beet", category: "Crop", icon: "🔴",
+  sources: [
+    { type: "Farming", detail: "Grow from Beet Seeds on Farmland. (Different from Sugar Beet.)" }
+  ],
+  usedFor: ["Cooking ingredient"]
+},
+{
+  name: "Coffee Beans", category: "Crop / Ingredient", icon: "☕",
+  sources: [
+    { type: "Farming", detail: "Grow Coffee Beans directly as a crop seed-item on Farmland." },
+    { type: "Milling", detail: "Mill at Grain Mill to get Ground Coffee." }
+  ],
+  usedFor: ["Black Coffee", "Cappuccino"]
+},
+
+// ===================== FRUIT TREES =====================
+{
+  name: "Lemon", category: "Fruit / Raw Food", icon: "🍋",
+  summary: "Raw Food fruit. +20 Max Health buff for 4 minutes when eaten.",
+  sources: [
+    { type: "Gathering", detail: "Harvested from wild Lemon Trees — found growing in Forest Biome (they're small, easy to miss; look for shorter trees with lower branches)." },
+    { type: "Farming", detail: "Plant a Lemon Sapling on terrain to grow your own Lemon Tree (also yields Spruce Logs + more Saplings)." },
+    { type: "Sapling source", detail: "Lemon Saplings sold by Farmer settler after defeating Sage & Grit boss, or found in Deep Cave chests." }
+  ],
+  usedFor: ["Lemon Tart (with Flour, Milk, Sugar)", "eaten raw for +20 Max HP buff"]
+},
+{
+  name: "Apple", category: "Fruit / Raw Food", icon: "🍎",
+  sources: [
+    { type: "Gathering", detail: "Harvested from wild Apple Trees in temperate Forest Biome." },
+    { type: "Farming", detail: "Plant Apple Saplings to grow your own tree." }
+  ],
+  usedFor: ["Candy Apple", "Cooking ingredient"]
+},
+{
+  name: "Banana", category: "Fruit / Raw Food", icon: "🍌",
+  sources: [
+    { type: "Gathering", detail: "Harvested from Banana Trees — grow in warmer biomes (Desert-adjacent)." },
+    { type: "Farming", detail: "Plant Banana Saplings (also drop Palm Logs)." }
+  ],
+  usedFor: ["Cooking ingredient"]
+},
+{
+  name: "Coconut", category: "Fruit / Raw Food", icon: "🥥",
+  sources: [
+    { type: "Gathering", detail: "Harvested from Coconut Trees in Desert Biome." },
+    { type: "Farming", detail: "Plant Coconut Saplings (also drop Palm Logs)." }
+  ],
+  usedFor: ["Cooking ingredient"]
+},
+{
+  name: "Blueberry", category: "Fruit / Raw Food", icon: "🫐",
+  sources: [
+    { type: "Gathering", detail: "Harvested from wild Blueberry Bushes in the Forest Biome." }
+  ],
+  usedFor: ["Cooking ingredient", "Blueberry and Corn Extract"]
+},
+{
+  name: "Blackberry", category: "Fruit / Raw Food", icon: "🫐",
+  sources: [
+    { type: "Gathering", detail: "Harvested from wild Blackberry Bushes — found in the Snow Biome." }
+  ],
+  usedFor: ["Cooking ingredient"]
+},
+{
+  name: "Raspberry", category: "Fruit / Raw Food", icon: "🍓",
+  sources: [
+    { type: "Gathering", detail: "Harvested from wild Raspberry bushes." }
+  ],
+  usedFor: ["Raspberry Juice", "Raspberry Pie (boosts mana & spell damage)"]
+},
+
+// ===================== FLOWERS / OTHER PLANTS =====================
+{
+  name: "Firemone", category: "Flower", icon: "🌻",
+  sources: [
+    { type: "Gathering / Farming", detail: "Found growing wild in Forest Biome; can be farmed from Firemone Seeds." }
+  ],
+  usedFor: ["Alchemy / Potion crafting", "sellable to Alchemist"]
+},
+{
+  name: "Iceblossom", category: "Flower", icon: "❄️",
+  sources: [
+    { type: "Gathering / Farming", detail: "Found growing wild in Snow Biome; farmed from Iceblossom Seeds." }
+  ],
+  usedFor: ["Alchemy / Potion crafting (cold-related)", "sellable to Alchemist"]
+},
+{
+  name: "Sunflower", category: "Flower", icon: "🌻",
+  sources: [
+    { type: "Gathering / Farming", detail: "Grows wild in Forest Biome; farmed from Sunflower Seeds." }
+  ],
+  usedFor: ["Decoration", "Alchemy ingredient"]
+},
+{
+  name: "Honey", category: "Ingredient", icon: "🍯",
+  sources: [
+    { type: "Beekeeping", detail: "Produced by Honey Bees in a player-built Apiary. Costs Apiary Frames (lost on harvest)." }
+  ],
+  usedFor: ["Sugar (alternative to Sugar Beet)", "also pollinates/fertilizes nearby crops"]
+},
+
+// ===================== RAW MEAT / ANIMAL PRODUCTS =====================
+{
+  name: "Raw Pork", category: "Raw Food", icon: "🥩",
+  sources: [{ type: "Hunting", detail: "Dropped by Pigs (Forest Biome) or raised via Pig Pen / Feeding Trough." }],
+  usedFor: ["Roasted Pork", "Stuffed Pig (decoration recipe)"]
+},
+{
+  name: "Raw Mutton", category: "Raw Food", icon: "🍖",
+  sources: [{ type: "Hunting", detail: "Dropped by Sheep (Forest & Snow Biomes)." }],
+  usedFor: ["Roasted Mutton"]
+},
+{
+  name: "Beef", category: "Raw Food", icon: "🥩",
+  sources: [{ type: "Hunting", detail: "Dropped by Cows (Forest Biome)." }],
+  usedFor: ["Steak"]
+},
+{
+  name: "Rabbit Leg", category: "Raw Food", icon: "🍗",
+  sources: [{ type: "Hunting", detail: "Dropped by Rabbits (Forest Biome) and Snow Hares (Snow Biome)." }],
+  usedFor: ["Roasted Rabbit Leg"]
+},
+{
+  name: "Duck Breast", category: "Raw Food", icon: "🍗",
+  sources: [{ type: "Hunting", detail: "Dropped by Ducks — found in Forest, Snow, and Desert Biomes." }],
+  usedFor: ["Roasted Duck Breast"]
+},
+{
+  name: "Egg", category: "Raw Food", icon: "🥚",
+  sources: [{ type: "Gathering", detail: "Laid by Chickens kept in a settlement (Chicken Coop)." }],
+  usedFor: ["Fried Egg", "Hard Boiled Egg", "Scrambled Eggs"]
+},
+{
+  name: "Milk", category: "Raw Food", icon: "🥛",
+  sources: [{ type: "Farming", detail: "Milked from Cows kept in a settlement." }],
+  usedFor: ["Lemon Tart", "Cheese (via Cheese Press)", "Cappuccino"]
+},
+{
+  name: "Frog Leg", category: "Raw Food", icon: "🍗",
+  sources: [{ type: "Hunting", detail: "Dropped by Frogs — found in the Swamp Biome." }],
+  usedFor: ["Roasted Frog Leg"]
+},
+
+// ===================== FISH =====================
+{
+  name: "Carp", category: "Fish", icon: "🐟",
+  sources: [{ type: "Fishing", detail: "Caught fishing in Forest/Plains freshwater." }],
+  usedFor: ["Roasted Fish", "Sushi Rolls"]
+},
+{
+  name: "Trout", category: "Fish", icon: "🐟",
+  sources: [{ type: "Fishing", detail: "Caught fishing in colder freshwater (Snow Biome lakes/rivers)." }],
+  usedFor: ["Roasted Fish", "Sushi Rolls"]
+},
+{
+  name: "Salmon", category: "Fish", icon: "🐟",
+  sources: [{ type: "Fishing", detail: "Caught fishing, generally in coastal/ocean water." }],
+  usedFor: ["Roasted Fish", "Sushi Rolls"]
+},
+{
+  name: "Shark Meat", category: "Raw Food / Fish", icon: "🦈",
+  sources: [{ type: "Fishing", detail: "Caught from Sharks in deep ocean water (rare catch, needs strong fishing gear)." }],
+  usedFor: ["Cooking — high-value fish meat"]
+},
+
+// ===================== BOSSES =====================
+{
+  name: "Evil's Protector", category: "Boss", icon: "👹",
+  summary: "First boss in the game. Two-phase fight (ground + air).",
+  sources: [
+    { type: "Summon", detail: "Use a Mysterious Portal — found in Forest Caves. Can ONLY be summoned at night; must be defeated before morning or the fight fails." },
+    { type: "Guaranteed drop", detail: "Demonic Bar ×12 (100%) and Force of Wind (100%) on every kill." },
+    { type: "First-kill reward", detail: "Demon Heart + Demon Cloak." },
+    { type: "Possible drops", detail: "Melee Foci, Magic Foci, Range Foci, or Summon Foci." }
+  ]
+},
+{
+  name: "Queen Spider", category: "Boss", icon: "🕷️",
+  summary: "Second boss. Heavy mid-game spider fight.",
+  sources: [
+    { type: "Summon", detail: "Destroy a Royal Egg in a Spider Nest mini-biome inside the Snow Caves." },
+    { type: "Guaranteed drop", detail: "Cave Spider Gland." },
+    { type: "Possible drops", detail: "Spider Claw, Spider Charm, Webbed Gun, or Frost Piercer." },
+    { type: "Quest reward", detail: "Ammo Pouch (first defeat)." }
+  ]
+},
+{
+  name: "Void Wizard", category: "Boss", icon: "🧙", 
+  summary: "Third boss, found at the bottom of the Dungeon.",
+  sources: [
+    { type: "Summon", detail: "Found at the bottom of the Dungeon — attack him to start the fight, or use a Void Caller item." },
+    { type: "Quest reward", detail: "Void Pouch (first defeat)." }
+  ]
+},
+{
+  name: "Swamp Guardian", category: "Boss", icon: "🐊",
+  summary: "Fourth boss, guards the Swamp Caves.",
+  sources: [
+    { type: "Summon", detail: "Use a Spiked Fossil inside the Swamp Caves." },
+    { type: "Quest reward", detail: "Homestone & Waystone (first defeat)." }
+  ]
+},
+{
+  name: "Ancient Vulture", category: "Boss", icon: "🦅",
+  summary: "Fifth boss, a rare desert bird fight.",
+  sources: [
+    { type: "Summon", detail: "Use an Ancient Statue, found in the Desert Biome." },
+    { type: "Guaranteed drop", detail: "Vulture Mask." },
+    { type: "Possible drops", detail: "Vultures Talon, Vultures Burst, or Vulture Staff." },
+    { type: "Quest reward", detail: "Recall Flask (first defeat)." }
+  ]
+},
+{
+  name: "Pirate Captain", category: "Boss", icon: "🏴‍☠️",
+  summary: "Boss found at Pirate Villages.",
+  sources: [
+    { type: "Summon", detail: "Found at Pirate Village locations." },
+    { type: "Guaranteed drop", detail: "Deep Ladder Down + Coins." },
+    { type: "Possible drops", detail: "Hand Cannon, Pirate Telescope, or Spare Boat Parts." },
+    { type: "First-kill reward", detail: "Pirate Sheath." },
+    { type: "Quest reward", detail: "Coin Pouch." }
+  ]
+},
+{
+  name: "Reaper", category: "Boss", icon: "💀",
+  summary: "Boss of the Forest Deep Caves.",
+  sources: [
+    { type: "Summon", detail: "Found in Forest Deep Caves." },
+    { type: "Possible drops", detail: "Death Ripper, Reaper Scythe, Reaper's Call, or Shadow Beam." },
+    { type: "Quest reward", detail: "Hoverboard (first defeat)." }
+  ]
+},
+{
+  name: "Cryo Queen", category: "Boss", icon: "🥶",
+  summary: "Ice-themed boss in the Deep Snow Caves.",
+  sources: [
+    { type: "Summon", detail: "Use an Ice Crown — only works inside Deep Snow Caves." },
+    { type: "Possible drops", detail: "Cryo Spear, Cryo Blaster (add frost damage), or Cryo Quake (AoE)." },
+    { type: "Quest reward", detail: "Banner Stand (first defeat)." }
+  ]
+},
+{
+  name: "Pest Warden", category: "Boss", icon: "🪲",
+  summary: "Tanky AoE/resist-heavy boss in the Deep Swamp Caves.",
+  sources: [
+    { type: "Summon", detail: "Use a Decaying Leaf — only works inside Deep Swamp Caves." },
+    { type: "Quest reward", detail: "Portal Flask (first defeat)." }
+  ]
+},
+{
+  name: "Sage & Grit", category: "Boss Duo", icon: "🐉",
+  summary: "Dragon-duo boss in the Deep Desert Caves. Defeating them unlocks the Desert Temple.",
+  sources: [
+    { type: "Summon", detail: "Use Dragon Souls on a pedestal found in Deep Desert Caves." },
+    { type: "Possible drops", detail: "Bow of Dualism, Dragon Lance, Dragons Rebound, or Skeleton Staff." },
+    { type: "Quest reward", detail: "Blink Scepter (first defeat)." }
+  ]
+},
+{
+  name: "Fallen Wizard", category: "Boss", icon: "🔮",
+  summary: "Found in the Temple — defeating him unlocks Incursions.",
+  sources: [
+    { type: "Summon", detail: "Found inside the Temple (unlocked after Sage & Grit)." },
+    { type: "First-kill reward", detail: "Empress' Mask + Gateway Tablet + Spider Essence." },
+    { type: "Quest reward", detail: "Void Bag (first defeat)." }
+  ]
+},
+
+// ===================== BIOMES =====================
+{
+  name: "Forest Biome", category: "Biome", icon: "🌲",
+  summary: "The default starting biome and the most common one.",
+  sources: [
+    { type: "Plants", detail: "Spruce Saplings, Oak Saplings, Blueberry Bushes, Sunflowers, Firemone, Lemon Trees, Apple Trees." },
+    { type: "Animals", detail: "Cows, Sheep, Rabbits, Ducks." },
+    { type: "Night threats", detail: "Zombies, Zombie Archers." },
+    { type: "Island types", detail: "Forest Island, Forest Village, Pirate Village, Dungeon Entrance." },
+    { type: "Underground", detail: "Forest Caves (boss access via Mysterious Portal) → Forest Deep Caves (Reaper boss)." }
+  ]
+},
+{
+  name: "Snow Biome", category: "Biome", icon: "❄️",
+  summary: "Frosty biome with its own cave chain.",
+  sources: [
+    { type: "Plants", detail: "Pine Saplings, Blackberry Bushes, Iceblossom." },
+    { type: "Animals", detail: "Sheep, Snow Hare, Polar Bear, Ducks." },
+    { type: "Night threats", detail: "Zombies, Zombie Archers, Trapper Zombies." },
+    { type: "Underground", detail: "Snow Caves (Spider Nest → Queen Spider boss) → Deep Snow Caves (Cryo Queen boss)." }
+  ]
+},
+{
+  name: "Swamp Biome", category: "Biome", icon: "🐸",
+  summary: "Marshy biome, no visible cave entrance on the surface.",
+  sources: [
+    { type: "Plants", detail: "Willow Saplings, Cattails." },
+    { type: "Animals", detail: "Frogs." },
+    { type: "Night threats", detail: "Zombies, Zombie Archers, Swamp Zombies." },
+    { type: "Island types", detail: "Swamp Island (Swamp Ruin) only." },
+    { type: "Underground", detail: "Swamp Caves (craft a Ladder Down to enter; Swamp Guardian boss) → Deep Swamp Caves (Pest Warden boss)." }
+  ]
+},
+{
+  name: "Desert Biome", category: "Biome", icon: "🏜️",
+  summary: "Hot, sandy biome rich in late-game materials.",
+  sources: [
+    { type: "Plants", detail: "Palm Saplings, Coconut Saplings, Cactus, Banana Trees." },
+    { type: "Animals", detail: "Wild Ostrich, Ducks." },
+    { type: "Night threats", detail: "Zombies, Zombie Archers, Mummies." },
+    { type: "Island types", detail: "Desert Island, Desert Village." },
+    { type: "Underground", detail: "Desert Caves (Caveling Oasis, mid-tier Tungsten Ore/Life Quartz; Ancient Vulture boss) → Deep Desert Caves (Tungsten, Ancient Fossils, Life Quartz; Sage & Grit boss; Sandworm enemy)." }
+  ]
+},
+{
+  name: "Plains Biome", category: "Biome", icon: "🌾",
+  summary: "A lighter, lower-tree-density variant of Forest, added in a later update.",
+  sources: [
+    { type: "Description", detail: "Forest-lite — fewer trees, otherwise shares Forest-style resources and enemies." }
+  ]
+},
+
+// ===================== CRAFTING STATIONS =====================
+{
+  name: "Grain Mill", category: "Crafting Station", icon: "⚙️",
+  summary: "Processes raw grain crops into their refined cooking form.",
+  sources: [
+    { type: "Crafting", detail: "Built at the Carpenters Bench (requires materials — check in-game recipe)." }
+  ],
+  usedFor: [
+    "Coffee Beans → Ground Coffee",
+    "Rice Seeds → Rice",
+    "Wheat → Flour",
+    "Sugar Beet or Honey → Sugar",
+    "Each milling operation takes 15 seconds"
+  ]
+},
+{
+  name: "Cooking Pot / Cooking Station", category: "Crafting Station", icon: "🍳",
+  summary: "Where most food recipes are actually cooked.",
+  sources: [{ type: "Note", detail: "Logs fuel it (2 min burn each) — but you can cook instantly without leaving it running, at the cost of needing fuel each time." }]
+},
+{
+  name: "Compost Bin", category: "Crafting Station", icon: "🌱",
+  summary: "Produces Fertilizer, which doubles crop growth speed.",
+  sources: [{ type: "Use", detail: "Place near Farmland; assign a Farmer settler to use it to keep crops fertilized automatically." }]
+},
+{
+  name: "Apiary", category: "Crafting Station / Object", icon: "🐝",
+  summary: "Houses Honey Bees for Honey production and crop pollination.",
+  sources: [{ type: "Note", detail: "Costs Apiary Frames per harvest (consumed); bees also passively fertilize nearby crops." }]
+},
+
+// ===================== INCURSION BOSSES (Batch 1) =====================
+// Incursions are end-game content unlocked after defeating Fallen Wizard.
+// Each incursion biome has an Objective (Hunt/Extraction/Trial) that summons its boss.
+{
+  name: "Mother Slime", category: "Incursion Boss", icon: "🟢",
+  summary: "First Incursion Boss. Three-phase fight with increasing speed as HP drops.",
+  sources: [
+    { type: "Summon", detail: "Spawns after completing the Slime Cave Incursion (complete its Objective to open the boss portal)." },
+    { type: "Guaranteed drop", detail: "Gateway Tablet + 20–25 Slime Essence." },
+    { type: "Strategy note", detail: "Calls Slime Warriors as backup at lower HP; speed-boosting trinkets/food help dodge its jump-and-spike attack." }
+  ]
+},
+{
+  name: "Night Swarm", category: "Incursion Boss", icon: "🦇",
+  summary: "Second Incursion Boss — a coordinated swarm of bats, not a single body.",
+  sources: [
+    { type: "Summon", detail: "Spawns after completing the Graveyard Incursion, or use a Swarm Signal while inside it." },
+    { type: "Guaranteed drop", detail: "Gateway Tablet + Swarm Essence." },
+    { type: "Strategy note", detail: "Each bat has 4,600 HP. AoE/multi-target weapons (e.g. The Crimson Sky) and homing weapons for stragglers work well." }
+  ]
+},
+{
+  name: "Spider Empress", category: "Incursion Boss", icon: "🕷️",
+  summary: "Third Incursion Boss — a larger, faster, more humanoid version of Queen Spider.",
+  sources: [
+    { type: "Summon", detail: "Spawns after completing the Spider Castle Incursion, or use a Crown of Spiderkin while inside it." },
+    { type: "Guaranteed drop", detail: "Gateway Tablet (exact essence varies by source)." },
+    { type: "Strategy note", detail: "Claw-line attack and silk-ball attack; has a berserk state with intensified patterns." }
+  ]
+},
+{
+  name: "Sunlight Champion", category: "Incursion Boss", icon: "☀️",
+  summary: "Fourth Incursion Boss — fast floating armor boss with two independently-moving gauntlets.",
+  sources: [
+    { type: "Summon", detail: "Only appears in the Sun Arena Trial Incursion — spawn via the boss portal immediately after entering." },
+    { type: "Possible drop", detail: "Kinetic Boots trinket (random drop, shared pool with Moonlight Dancer)." },
+    { type: "Guaranteed drop", detail: "Gateway Tablet." },
+    { type: "Strategy note", detail: "Fill the arena's lava pit before fighting. Has an insta-kill charge attack — create maximum distance when it begins charging." }
+  ]
+},
+{
+  name: "Moonlight Dancer", category: "Incursion Boss", icon: "🌙",
+  summary: "Fourth Incursion Boss (paired with Sunlight Champion) — slow-moving ranged attacker.",
+  sources: [
+    { type: "Summon", detail: "Only appears in the Moon Arena Trial Incursion — spawn immediately after entering." },
+    { type: "Possible drop", detail: "Kinetic Boots trinket (random drop, shared pool with Sunlight Champion)." },
+    { type: "Guaranteed drop", detail: "Gateway Tablet." },
+    { type: "Strategy note", detail: "Remove interior arena walls before starting; teleports while firing flurries of projectiles, has a Crushing Darkness debuff." }
+  ]
+},
+{
+  name: "Crystal Dragon", category: "Incursion Boss", icon: "🐲",
+  summary: "Fifth Incursion Boss — flying serpent-like dragon that summons Crystal Golems.",
+  sources: [
+    { type: "Summon", detail: "Spawns after completing the Crystal Hollow Incursion." },
+    { type: "Guaranteed drop", detail: "Gateway Tablet — exact reward varies by Omni-Crystal vs Pearlescent Diamond incursion type." },
+    { type: "Strategy note", detail: "Fires crystal projectiles and summons Crystal Golems; prioritize killing golems quickly to avoid being overwhelmed." }
+  ]
+},
+{
+  name: "Ascended Wizard", category: "Incursion Boss", icon: "🪄",
+  summary: "The current final boss of Necesse. Three phases, the last being 'The Void.'",
+  sources: [
+    { type: "Requirements", detail: "Defeat Fallen Wizard → collect 5 Ascended Shards (drop from Tier 8+ Incursion bosses) → craft Ascended Incursion Tablet at the Fallen Workstation." },
+    { type: "Summon", detail: "Inside the Ascended Incursion stage, destroy all 3 Ascended Pylons (purple dots on minimap) to auto-start the fight — no summon item needed." },
+    { type: "Guaranteed drops", detail: "Void Vessel + Void Phasing Staff." },
+    { type: "Possible weapon drop (25%)", detail: "Ascended Staff, Ascended Bow, Void Claw, or Eye of the Void." },
+    { type: "Completion reward", detail: "Ring of Ascension + end-game credits + completes the related Elder quest." },
+    { type: "Strategy note", detail: "Phase 1 & 2 are enhanced versions of every prior boss's attacks; Phase 3 ('The Void') is a kiting fight — Hoverboard recommended." }
+  ]
+},
+
+// ===================== ORES (Batch 2) =====================
+// Verified against necessewiki.com's official "Rocks with Ores" page — exact rock-to-ore mapping.
+{
+  name: "Copper Ore", category: "Ore", icon: "⛏️",
+  summary: "The most common, earliest-tier ore.",
+  sources: [{ type: "Mining", detail: "Found in nearly every rock type on the surface and in caves: Rock, Sandstone, Snow Rock, Swamp Rock, Granite Rock, Basalt Rock, Deep Rock, and Deep Sandstone/Snow/Swamp Rocks." }],
+  usedFor: ["Copper Bar (smelt at Forge)"]
+},
+{
+  name: "Iron Ore", category: "Ore", icon: "⛏️",
+  summary: "Early-mid tier ore, just as common as Copper.",
+  sources: [{ type: "Mining", detail: "Found in the same wide range of rocks as Copper Ore: surface Rocks, Sandstone, Snow/Swamp/Granite/Basalt Rocks, and all Deep Rock variants." }],
+  usedFor: ["Iron Bar (smelt at Forge)"]
+},
+{
+  name: "Gold Ore", category: "Ore", icon: "⛏️",
+  summary: "Mid-tier ore, same broad availability as Copper/Iron.",
+  sources: [{ type: "Mining", detail: "Found in surface Rocks, Sandstone, Snow/Swamp/Granite/Basalt Rocks, and all Deep Rock variants." }],
+  usedFor: ["Gold Bar (smelt at Forge)"]
+},
+{
+  name: "Tungsten Ore", category: "Ore", icon: "⛏️",
+  summary: "Mid-late tier — needed to progress into the late game.",
+  sources: [
+    { type: "Mining", detail: "Found in Basalt Rock and all Deep Rock variants (Deep Rock, Deep Snow Rock, Deep Swamp Rock) — most common in Forest Deep Caves." },
+    { type: "Pickaxe required", detail: "Quartz Pickaxe or better." },
+    { type: "Alternate source", detail: "Occasionally dropped by Cavelings in the Desert Caves' Caveling Oasis." }
+  ],
+  usedFor: ["Tungsten Bar (smelt at Forge)"]
+},
+{
+  name: "Ivy Ore", category: "Ore", icon: "⛏️",
+  summary: "Swamp-exclusive ore.",
+  sources: [{ type: "Mining", detail: "Found only in Swamp Rock (surface Swamp Biome)." }],
+  usedFor: ["Ivy Bar (smelt at Forge)"]
+},
+{
+  name: "Glacial Ore", category: "Ore", icon: "⛏️",
+  summary: "Snow-exclusive, deep-tier ore.",
+  sources: [{ type: "Mining", detail: "Found only in Deep Snow Rock (Deep Snow Caves)." }],
+  usedFor: ["Glacial Bar (smelt at Forge)"]
+},
+{
+  name: "Mycelium Ore", category: "Ore", icon: "⛏️",
+  summary: "Swamp-exclusive, deep-tier ore.",
+  sources: [{ type: "Mining", detail: "Found only in Deep Swamp Rock (Deep Swamp Caves)." }],
+  usedFor: ["Mycelium Bar (smelt at Forge)"]
+},
+{
+  name: "Ancient Fossil Ore", category: "Ore", icon: "⛏️",
+  summary: "Desert-exclusive, deep-tier ore.",
+  sources: [{ type: "Mining", detail: "Found only in Deep Sandstone Rock (Deep Desert Caves)." }],
+  usedFor: ["Ancient Fossil Bar (smelt at Forge)"]
+},
+{
+  name: "Nightsteel Ore", category: "Ore", icon: "⛏️",
+  summary: "Incursion-exclusive ore.",
+  sources: [{ type: "Mining", detail: "Found only in Crypt Rock — exclusive to the Graveyard Incursion biome." }],
+  usedFor: ["Nightsteel Bar"]
+},
+{
+  name: "Spiderite Ore", category: "Ore", icon: "⛏️",
+  summary: "Incursion-exclusive ore.",
+  sources: [{ type: "Mining", detail: "Found only in Spider Rock — exclusive to the Spider Castle Incursion biome." }],
+  usedFor: ["Spiderite Bar (crafted at Fallen Workstation)"]
+},
+{
+  name: "Slimeum", category: "Ore", icon: "⛏️",
+  summary: "Incursion-exclusive ore — note it's not called 'Slimeum Ore.'",
+  sources: [{ type: "Mining", detail: "Found only in Slime Rock — exclusive to the Slime Cave Incursion biome." }],
+  usedFor: ["Slime-themed gear crafted at Fallen Workstation"]
+},
+
+// ===================== BARS (smelted/crafted from Ores) =====================
+{
+  name: "Copper Bar", category: "Bar", icon: "🔶",
+  sources: [{ type: "Smelting", detail: "Smelt Copper Ore (or a broken Copper tool) at a Forge." }],
+  usedFor: ["Basic tools, weapons, and armor"]
+},
+{
+  name: "Iron Bar", category: "Bar", icon: "🔶",
+  sources: [{ type: "Smelting", detail: "Smelt Iron Ore at a Forge." }],
+  usedFor: ["Mid-tier tools, weapons, and armor"]
+},
+{
+  name: "Gold Bar", category: "Bar", icon: "🔶",
+  sources: [{ type: "Smelting", detail: "Smelt Gold Ore at a Forge." }],
+  usedFor: ["Higher-tier gear, trading"]
+},
+{
+  name: "Tungsten Bar", category: "Bar", icon: "🔶",
+  sources: [{ type: "Smelting", detail: "Smelt Tungsten Ore at a Forge or Iron Anvil." }],
+  usedFor: ["Late-game tools, weapons, and armor"]
+},
+{
+  name: "Demonic Bar", category: "Bar", icon: "🔶",
+  summary: "Not smelted from an ore — comes directly from the first boss.",
+  sources: [{ type: "Boss drop", detail: "Guaranteed drop (x12) from defeating Evil's Protector." }],
+  usedFor: ["Demonic-tier tools, weapons and armor crafted at the Demonic Anvil/Workstation"]
+},
+{
+  name: "Ivy Bar", category: "Bar", icon: "🔶",
+  sources: [{ type: "Smelting", detail: "Smelt Ivy Ore at a Forge or Iron Anvil." }],
+  usedFor: ["Swamp-tier gear"]
+},
+{
+  name: "Glacial Bar", category: "Bar", icon: "🔶",
+  sources: [{ type: "Smelting", detail: "Smelt Glacial Ore — requires a Tungsten Pickaxe to even mine the ore first." }],
+  usedFor: ["Snow deep-tier gear"]
+},
+{
+  name: "Mycelium Bar", category: "Bar", icon: "🔶",
+  sources: [{ type: "Smelting", detail: "Smelt Mycelium Ore from Deep Swamp Caves." }],
+  usedFor: ["Swamp deep-tier gear"]
+},
+{
+  name: "Ancient Fossil Bar", category: "Bar", icon: "🔶",
+  sources: [{ type: "Smelting", detail: "Smelt Ancient Fossil Ore — requires a Mycelium Pickaxe to mine the ore first." }],
+  usedFor: ["Desert deep-tier gear, including Ancient Fossil Boots and other equipment"]
+},
+{
+  name: "Nightsteel Bar", category: "Bar", icon: "🔶",
+  sources: [{ type: "Smelting/Crafting", detail: "Made from Nightsteel Ore, exclusive to the Graveyard Incursion." }],
+  usedFor: ["Nightsteel-tier weapons and armor"]
+},
+{
+  name: "Spiderite Bar", category: "Bar", icon: "🔶",
+  sources: [{ type: "Crafting", detail: "Made from Spiderite Ore at the Fallen Workstation." }],
+  usedFor: ["Spiderite-tier weapons and armor"]
+},
+
+// ===================== GEMS & RARE MINERALS =====================
+{
+  name: "Quartz", category: "Mineral", icon: "💎",
+  sources: [{ type: "Mining", detail: "Found as a mineral cluster in caves." }],
+  usedFor: ["Quartz-tier tools/equipment"]
+},
+{
+  name: "Life Quartz", category: "Mineral", icon: "💎",
+  summary: "Health-related crafting mineral.",
+  sources: [{ type: "Mining", detail: "Found in Desert Caves, notably around the Caveling Oasis." }],
+  usedFor: ["Health-boosting equipment"]
+},
+{
+  name: "Amethyst", category: "Gem", icon: "💜",
+  sources: [{ type: "Mining", detail: "Found as a mineral cluster in caves." }],
+  usedFor: ["Amethyst Sword and other gem-tier equipment"]
+},
+{
+  name: "Ruby", category: "Gem", icon: "❤️",
+  sources: [{ type: "Mining", detail: "Found as a mineral cluster in caves." }],
+  usedFor: ["Ruby-tier equipment (e.g. Ruby Shields, Ruby Crown)"]
+},
+{
+  name: "Sapphire", category: "Gem", icon: "💙",
+  sources: [{ type: "Mining", detail: "Found as a mineral cluster in caves." }],
+  usedFor: ["Sapphire-tier equipment"]
+},
+{
+  name: "Topaz", category: "Gem", icon: "💛",
+  sources: [{ type: "Mining", detail: "Found as a mineral cluster, notably in the Crystal Hollow Incursion." }],
+  usedFor: ["Topaz-tier equipment"]
+},
+{
+  name: "Emerald", category: "Gem", icon: "💚",
+  sources: [{ type: "Mining", detail: "Found as a mineral cluster in caves." }],
+  usedFor: ["Emerald Wand and other gem-tier equipment"]
+},
+{
+  name: "Obsidian", category: "Mineral", icon: "⬛",
+  sources: [{ type: "Mining", detail: "Found in volcanic/deep cave clusters." }],
+  usedFor: ["High-tier equipment"]
+},
+{
+  name: "Clay", category: "Mineral", icon: "🟫",
+  sources: [{ type: "Gathering", detail: "Dug from clay deposits, often near water." }],
+  usedFor: ["Clay Gauntlet and pottery-style crafting"]
+},
+{
+  name: "Frost Shard", category: "Mineral", icon: "❄️",
+  sources: [{ type: "Mining/Drops", detail: "Found in Snow biome caves, also dropped by ice-themed enemies." }],
+  usedFor: ["Frost-tier weapons (e.g. Frost Piercer, Frost Arrow/Bullet)"]
+},
+{
+  name: "Alchemy Shard", category: "Mineral", icon: "🧪",
+  sources: [{ type: "Mining", detail: "Found in Alchemy-shard rock clusters, including inside Incursions (e.g. Spider Castle)." }],
+  usedFor: ["Alchemy Table-related crafting/upgrades"]
+},
+{
+  name: "Upgrade Shard", category: "Mineral", icon: "✨",
+  summary: "Used to upgrade equipment tiers at the Upgrade Station.",
+  sources: [{ type: "Drops", detail: "Primarily farmed from Incursions." }],
+  usedFor: ["Upgrading weapon/armor tiers at the Upgrade Station"]
+},
+{
+  name: "Omni-Crystal", category: "Mineral", icon: "🔮",
+  sources: [{ type: "Mining", detail: "Found in the Crystal Hollow Incursion biome." }],
+  usedFor: ["Crystal-tier gear, Gateway Tablet rewards"]
+},
+{
+  name: "Pearlescent Diamond", category: "Gem", icon: "🤍",
+  summary: "Exclusive to one specific incursion biome.",
+  sources: [{ type: "Mining", detail: "Found only in the Crystal Hollow Incursion biome." }],
+  usedFor: ["High-tier crystal gear"]
+},
+
+// ===================== TOOLS (Batch 3) =====================
+// Axes/Pickaxes/Shovels/Fishing Rods follow the same material tier as their matching Bar.
+// Sourced from necessewiki.com Equipment page tool listings + Tools page descriptions.
+{
+  name: "Axes (all tiers)", category: "Tool", icon: "🪓",
+  summary: "Used to cut down trees and chop wood-type objects/furniture.",
+  sources: [
+    { type: "Starting tool", detail: "Wood Axe is in your starting inventory." },
+    { type: "Crafting progression", detail: "Copper → Iron → Gold → Tungsten → Glacial → Mycelium → Ancient Fossil Axe, each crafted from its matching Bar at the appropriate Anvil/Workstation tier." },
+    { type: "Special variants", detail: "Frost Axe, Demonic Axe, Runic Axe, Ivy Axe, Quartz Axe, and Dryad Axe are found/crafted via specific recipes or biome drops rather than the standard ore-tier chain." }
+  ]
+},
+{
+  name: "Pickaxes (all tiers)", category: "Tool", icon: "⛏️",
+  summary: "Used to mine stone, ores, and rock-type objects. Higher tiers are required to mine higher-tier ores.",
+  sources: [
+    { type: "Starting tool", detail: "Wood Pickaxe is craftable immediately at the starting Workstation." },
+    { type: "Crafting progression", detail: "Copper → Iron → Gold → Tungsten → Glacial → Mycelium → Ancient Fossil Pickaxe — each new tier is required to mine the next-tier ore." },
+    { type: "Special/found variant", detail: "Ice Pickaxe can be found directly in Deep Snow Biomes, letting players skip part of the standard crafting chain (same tool damage as Ancient Fossil Pickaxe, +1 range, -2 damage trade-off per some community testing)." },
+    { type: "Other variants", detail: "Frost, Demonic, Ivy, Quartz, Runic, Dryad Pickaxes — biome/boss specific recipes." }
+  ]
+},
+{
+  name: "Shovels (all tiers)", category: "Tool", icon: "🛠️",
+  summary: "Used to dig up sand/dirt/ground tiles and clear grass.",
+  sources: [
+    { type: "Starting tool", detail: "Wood Shovel is craftable immediately at the starting Workstation — the first and weakest shovel." },
+    { type: "Higher tiers", detail: "Runic Shovel and other material-tier shovels exist for late-game digging speed/durability." }
+  ]
+},
+{
+  name: "Fishing Rods", category: "Tool", icon: "🎣",
+  summary: "Used to catch fish — performance measured by 'Fishing Power.'",
+  sources: [
+    { type: "Tiers", detail: "Wood Fishing Rod → Iron Fishing Rod → Overgrown Fishing Rod → Gold Fishing Rod → Depths Catcher (highest tier, ~40% Fishing Power)." },
+    { type: "Crafting", detail: "Crafted at standard crafting stations using the matching tier material." }
+  ],
+  usedFor: ["Catching all Fish types, including rare catches like Shark Meat"]
+},
+{
+  name: "Misc Tools (Bucket, Net, Rope, Sickle, Shears, Binoculars)", category: "Tool", icon: "🧰",
+  summary: "Utility tools for specific jobs around the settlement and exploration.",
+  sources: [
+    { type: "Binoculars", detail: "Lets you zoom in to view far distances — helps with navigation." },
+    { type: "Sickle/Shears", detail: "Used for harvesting crops/plants and shearing Sheep respectively." },
+    { type: "Infinite Rope / Infinite Water Bucket", detail: "Late-game upgraded utility tools with unlimited uses, found or crafted from late-game materials." },
+    { type: "Farming Scythe", detail: "Specialized tool for faster crop harvesting." }
+  ]
+},
+
+// ===================== WEAPONS (Batch 4) =====================
+// Tier-progression weapons (crafted from matching-tier Bars) are grouped by weapon TYPE.
+// Unique/boss-drop weapons get individual cards ONLY where the source is verified.
+{
+  name: "Swords (all tiers)", category: "Weapon", icon: "⚔️",
+  summary: "Swung in an arc toward the cursor. The most common melee weapon type.",
+  sources: [
+    { type: "Starting weapon", detail: "Wood Sword is in your starting inventory." },
+    { type: "Crafting progression", detail: "Copper → Iron → Gold → Tungsten Sword, each crafted from the matching tier Bar at the appropriate Anvil." },
+    { type: "Special/unique swords", detail: "Katana, Reinforced Katana, Cutlass, Sand Knife, Bark Blade, Venom Slasher, Gemstone Longsword, Amethyst Sword, Frost Sword, Ivy Sword, Demonic Sword, Aged Champion Sword, Antique Sword, Caustic Executioner, The Perfect Storm — each tied to a specific biome, boss, or rare chest, not the standard ore chain." },
+    { type: "Boss drop", detail: "Spider Claw — possible drop from Queen Spider." }
+  ]
+},
+{
+  name: "Greatswords (all tiers)", category: "Weapon", icon: "🗡️",
+  summary: "Charged and swung in a single large arc hit — slower, heavier melee weapons.",
+  sources: [
+    { type: "Crafting progression", detail: "Iron → Frost → Ivy → Quartz → Glacial Greatsword, crafted from matching tier materials." },
+    { type: "Unique/incursion variants", detail: "Slime Greatsword, Ravenwing Greatsword (incursion-exclusive special reward), Necrotic Greatsword, Hexed Blade." }
+  ]
+},
+{
+  name: "Spears (all tiers)", category: "Weapon", icon: "🔱",
+  summary: "Stabbed toward the cursor — only the tip deals damage, but has range.",
+  sources: [
+    { type: "Crafting progression", detail: "Wood → Copper → Iron → Gold → Tungsten → Demonic → Ivy Spear, crafted from matching tier materials." },
+    { type: "Variant", detail: "Copper Pitchfork — early alternate spear-type weapon." },
+    { type: "Boss drop", detail: "Vultures Talon — possible drop from Ancient Vulture." },
+    { type: "Unique/incursion", detail: "Void Spear, Cryo Spear (Cryo Queen drop pool), Ravenbeak Spear (Incursion special reward)." }
+  ]
+},
+{
+  name: "Glaives (all tiers)", category: "Weapon", icon: "🔪",
+  summary: "Swung continuously, hitting everything around the player — good crowd control.",
+  sources: [
+    { type: "Crafting progression", detail: "Gold → Frost → Quartz Glaive, crafted from matching tier materials." },
+    { type: "Unique/incursion", detail: "Cryo Glaive (Cryo Queen drop pool), Slime Glaive (Mother Slime / Slime Cave Incursion)." }
+  ]
+},
+{
+  name: "Boomerangs (all tiers)", category: "Weapon", icon: "🪃",
+  summary: "Thrown outward, dealing melee damage, then return to the player.",
+  sources: [
+    { type: "Crafting progression", detail: "Wood → Tungsten → Frost → Glacial Boomerang, crafted from matching tier materials." },
+    { type: "Unique/incursion", detail: "Spider Boomerang (Queen Spider/Spider-themed drop), Void Boomerang, Razor Blade, Night Razor, Rolling Pin, Butcher's Cleaver, Dragons Rebound (Sage & Grit boss drop pool — confirmed)." }
+  ]
+},
+{
+  name: "Heavy/Unique Melee (Hammers, Daggers, Scythes, Claws)", category: "Weapon", icon: "🔨",
+  summary: "Catch-all for unique-shaped melee weapons that don't follow a standard sword/spear pattern.",
+  sources: [
+    { type: "Listed items", detail: "Heavy Hammer, Boxing Glove Gun, Lightning Hammer, Carapace Dagger, Galvanic Hammer, Dryad Greathammer, Brute's Battleaxe, Blood Claw, Anchor & Chain, Chef's Special, Void Claw." },
+    { type: "Boss drop", detail: "Reaper Scythe — possible drop from the Reaper boss (confirmed)." },
+    { type: "Note", detail: "Most of these are found in chests, incursion rewards, or specific boss drop pools — check the in-game item tooltip for its exact source, as individual confirmation for each of these is still pending in this compendium." }
+  ]
+},
+{
+  name: "Bows (all tiers)", category: "Weapon", icon: "🏹",
+  summary: "Fires arrows toward the cursor — needs Arrows as ammo.",
+  sources: [
+    { type: "Crafting progression", detail: "Wood → Copper → Iron → Gold → Tungsten → Demonic → Ivy → Glacial Bow, crafted from matching tier materials." },
+    { type: "Boss drop", detail: "Vultures Burst — possible drop from Ancient Vulture (confirmed). Bow of Dualism — possible drop from Sage & Grit (confirmed)." },
+    { type: "Unique/Incursion", detail: "Dryad Bow, Captor's Shortbow, The Crimson Sky, The Raven's Nest (Incursion special reward), Necrotic Bow, Antique Bow, Arachnid Web Bow, Reanimation Bow, Ascended Bow (Ascended Wizard drop pool — confirmed)." }
+  ]
+},
+{
+  name: "Guns (all tiers)", category: "Weapon", icon: "🔫",
+  summary: "Shoots Bullets toward the cursor.",
+  sources: [
+    { type: "Boss drop", detail: "Hand Cannon — possible drop from Pirate Captain (confirmed)." },
+    { type: "Ammo needed", detail: "Frost Bullet, Simple Bullet, Crystal Bullet, Bouncing Bullet, Shark Tooth Bullet, Void Bullet, Cannonball." }
+  ]
+},
+{
+  name: "Magic Weapons / Staves", category: "Weapon", icon: "🪄",
+  summary: "Wide variety of magic-type weapons with unique projectile/summon effects.",
+  sources: [
+    { type: "Listed items", detail: "Spider Staff, Frost Piercer, Sentient Sword, Magic Branch, Dryad Branch, Cryo Staff, Ruby Shields, Orb of Slimes, Brain on a Stick, Stabby Bush, Slime Canister, Phantom Caller, Vulture Staff, Bashy Bush, Skeleton Staff, Swamps Grasp, Crystallized Skull, Eye of the Void." },
+    { type: "Boss drops (confirmed)", detail: "Frost Piercer (Queen Spider), Vulture Staff (Ancient Vulture), Skeleton Staff (Sage & Grit), Eye of the Void (Ascended Wizard)." },
+    { type: "Boss drop", detail: "Reapers Call — possible drop from the Reaper boss (confirmed)." },
+    { type: "Boss drop", detail: "Empress Command — likely a Spider Empress incursion-related drop (name strongly implies this; not yet independently confirmed)." }
+  ]
+},
+{
+  name: "Arrows & Bullets (Ammo)", category: "Ammo", icon: "➳",
+  summary: "Consumable ammo for Bows and Guns respectively.",
+  sources: [
+    { type: "Arrows", detail: "Stone Arrow, Fire Arrow, Frost Arrow, Poison Arrow, Bouncing Arrow, Iron Arrow, Bone Arrow, Spiderite Arrow — crafted from basic materials + a special effect ingredient (e.g. Frost Shard for Frost Arrow)." },
+    { type: "Bullets", detail: "Frost Bullet, Simple Bullet, Crystal Bullet, Bouncing Bullet, Shark Tooth Bullet, Void Bullet, Cannonball — crafted from basic materials + a special effect ingredient." }
+  ]
+},
+
+// ===================== ARMOR (Batch 5) =====================
+{
+  name: "Standard Armor Sets (Helmet/Chestplate/Boots, all tiers)", category: "Armor", icon: "🛡️",
+  summary: "Each tier-named set (Copper, Iron, Gold, Tungsten, etc.) follows the same ore/bar progression as Tools and Weapons. Full matching sets give a 'set bonus.'",
+  sources: [
+    { type: "Crafting progression", detail: "Copper → Iron → Gold → Tungsten → Glacial → Mycelium → Ancient Fossil armor sets, each crafted from the matching tier Bar at the appropriate Anvil." },
+    { type: "Mechanic", detail: "Each point of Armor reduces damage taken by 0.5 health. A complete matching set (Helmet + Chestplate + Boots) grants a special set bonus." }
+  ]
+},
+{
+  name: "Spider Armor (Spider Helmet, Chestplate)", category: "Armor", icon: "🕷️",
+  summary: "Summoner-class armor. Increases max summon slots.",
+  sources: [
+    { type: "Crafting", detail: "Spider Helmet is crafted at the Workbench using Cave Spider Glands (dropped by Cave Spiders)." },
+    { type: "Set bonus", detail: "Wearing just the Spider Helmet gives +1 max summons; the full Spider Armor set gives +2 max summons total." }
+  ]
+},
+{
+  name: "Void Armor (Void Mask, Void Robe, etc.)", category: "Armor", icon: "🌀",
+  summary: "Demonic-tier summoner armor.",
+  sources: [
+    { type: "Crafting", detail: "Void Mask is crafted at the Demonic Workstation using Void Shards and Wool." },
+    { type: "Set bonus", detail: "Wearing the Void Mask grants the player 2 summons at once." }
+  ]
+},
+{
+  name: "Demon Cloak", category: "Item Set Unlock", icon: "🧥",
+  summary: "Consumable that permanently raises your max equippable Item Sets.",
+  sources: [
+    { type: "Boss drop", detail: "Dropped by Evil's Protector. Permanently increases max Item Sets to 2. Single use." }
+  ]
+},
+{
+  name: "Arcane Armory", category: "Item Set Unlock", icon: "📚",
+  summary: "Consumable that further raises your max Item Sets.",
+  sources: [
+    { type: "Crafting", detail: "Crafted at the Demonic Workstation. Permanently increases max Item Sets to 3 (replaces the need for Demon Cloak if used first)." }
+  ]
+},
+{
+  name: "Abyssal Cloak", category: "Item Set Unlock", icon: "🖤",
+  summary: "Highest-tier Item Set unlock.",
+  sources: [
+    { type: "Boss drop", detail: "Dropped by the Fallen Wizard. Permanently increases max Item Sets to 4." }
+  ]
+},
+{
+  name: "Shark Armor Set", category: "Armor", icon: "🦈",
+  summary: "Crafted from ocean materials.",
+  sources: [
+    { type: "Crafting", detail: "Crafted at the Demonic Anvil, using Shark Fin and Shark Tooth materials (from hunting Sharks)." }
+  ]
+},
+{
+  name: "Incursion Armor Sets (Dawn, Dusk, Crystal, Nightsteel, Spiderite, Slime, Dryad, Arcanic, Ravenlord's)", category: "Armor", icon: "✨",
+  summary: "Late-game armor sets exclusive to Incursion content.",
+  sources: [
+    { type: "Dawn / Dusk Armor", detail: "Drop as personal loot for all players in the Sun Arena / Moon Arena Incursions respectively — individual pieces rotate per boss kill." },
+    { type: "Crystal Armor", detail: "Tied to the Crystal Hollow Incursion (Crystal Dragon) — community-regarded as one of the strongest overall armor sets." },
+    { type: "Arcanic & Ravenlord's Armor", detail: "Crafted at the Fallen Anvil; Ravenlord's Chestplate/Headdress are also tied to special Incursion rewards (Kinetic Boots, Ravenwing Greatsword, Ravenbeak Spear, The Raven's Nest are exclusive special rewards from these)." },
+    { type: "Nightsteel / Spiderite / Slime / Dryad Armor", detail: "Each tied to its respective Incursion biome (Graveyard, Spider Castle, Slime Cave) materials." }
+  ]
+},
+{
+  name: "Cosmetic Armor & Costumes", category: "Cosmetic", icon: "🎭",
+  summary: "Equipment placed in cosmetic slots overrides appearance only — no stat bonuses.",
+  sources: [
+    { type: "Sources vary", detail: "Sold by specific settlers (Alchemist, Stylist, Gunsmith, Hunter), seasonal event drops (Christmas Hat, Pumpkin Mask), or rare raider drops (Masked Hunter Hood from Rogue Hunter Raiders)." },
+    { type: "Listed examples", detail: "Party Hat, Pumpkin Mask, Farmer Shoes/Hat/Shirt, Christmas Hat, Trapper Hat, Jester Hat, Shark Mask/Costume, Frog Mask/Costume, Chicken Costume, Hula Hat/Skirt, Top Hat, Miner Hat/Shirt, Surgical Mask, Space Helmet, Hard Hat, Swimsuit, Sailor Shoes." }
+  ]
+},
+
+// ===================== TRINKETS (Batch 6) =====================
+{
+  name: "Force of Wind", category: "Trinket", icon: "💨",
+  summary: "Useful boss-fight trinket, not strictly summon-related.",
+  sources: [{ type: "Boss drop", detail: "Guaranteed drop (100%) from defeating Evil's Protector — confirmed." }]
+},
+{
+  name: "Melee / Magic / Range / Summon Foci", category: "Trinket Set", icon: "🎯",
+  summary: "Class-focused trinkets that boost their respective combat style.",
+  sources: [{ type: "Boss drop", detail: "Possible drops from Evil's Protector — confirmed." }, { type: "Summon Foci", detail: "Must defeat Evil's Protector multiple times to obtain all the Foci variants, including a craftable 'Balanced Foci.'" }]
+},
+{
+  name: "Demon Heart", category: "Trinket", icon: "❤️‍🔥",
+  summary: "Early defensive trinket.",
+  sources: [{ type: "Boss drop", detail: "First-kill reward from Evil's Protector — confirmed." }]
+},
+{
+  name: "Spider Charm", category: "Trinket", icon: "🕸️",
+  sources: [{ type: "Boss drop", detail: "Possible drop from Queen Spider — confirmed." }]
+},
+{
+  name: "Spider Staff", category: "Summon Weapon", icon: "🪄",
+  summary: "Early summoning weapon.",
+  sources: [{ type: "Source", detail: "One of the first two summon weapons obtainable in the game (alongside Brain on a Stick)." }]
+},
+{
+  name: "Brain on a Stick", category: "Summon Weapon", icon: "🧠",
+  summary: "The earliest, weakest summon weapon — but easy to get.",
+  sources: [{ type: "Trader", detail: "Purchased from a Traveling Merchant once you have a settlement — appears in their randomized stock fairly often." }],
+  usedFor: ["Summons 2 zombie types — 1 melee, 1 ranged"]
+},
+{
+  name: "Inducing Amulet", category: "Trinket", icon: "💍",
+  summary: "Useful before fighting Pirate Captain.",
+  sources: [{ type: "Note", detail: "Players may be able to find it before reaching the Pirate Captain fight." }]
+},
+{
+  name: "Air Vessel", category: "Trinket", icon: "🫧",
+  summary: "Useful in boss fights, pairs well with Force of Wind or Blink Scepter.",
+  sources: [{ type: "Note", detail: "General exploration/combat utility trinket." }]
+},
+{
+  name: "Kinetic Boots", category: "Trinket", icon: "👢",
+  summary: "Incursion-exclusive boots trinket.",
+  sources: [{ type: "Boss drop", detail: "Random drop from Sunlight Champion or Moonlight Dancer — confirmed." }]
+},
+{
+  name: "Full Trinket Catalog (Reference)", category: "Trinket", icon: "💎",
+  summary: "Necesse has 80+ named trinkets. The full official list, for reference and search purposes — individual sources for each are still being verified.",
+  sources: [
+    { type: "Listed (A-M)", detail: "Demon Claw, Dream Catcher, Leather Dashers, Zephyr Charm, Leather Glove, Tracker Boot, Regen Pendant, Prophecy Slab, Forbidden Spellbook, Nightmare Talisman, Clay Gauntlet, Magic Manual, Fuzzy Dice, Spare Gemstones, Chain Shirt, Wood Shield, Scrying Cards, Vambrace, Shine Belt, Fins, Noble Horseshoe, Vampires Gift, Bone Hilt, Manica, Explorer Satchel, Will-o'-Wisp Lantern, Mesmer Tablet, Item Attractor, Construction Hammer, Hardened Shield, Life Pendant, Companion Locket, Essence of Rebirth, Telescopic Ladder, Caveling's Foot, Polar Claw, Essence of Prolonging." },
+    { type: "Listed (N-Z)", detail: "Zephyr Boots, Lucky Cape, Tool Extender, Tungsten Shield, Essence of Perspective, Mobility Cloak, Bloodstone Ring, Mining Charm, Gelatin Casings, Frozen Heart, Ancient Feather, Frozen Wave, Cactus Shield, Caveling's Collection, Wind Boots, Spell Stone, Calming Rose, Traveler Cloak, Lifeline, Aged Champion Scabbard, Fool's Gambit, Frost Stone, Frost Flame, Frozen Soul, Ghost Boots, Guardian Bracelet, Guardian Shield, Hover Boots, Hysteria Tablet, Inducing Tablet, Magical Quiver, Miners Prosthetic, Mobility Charm, Necrotic Soul Skull, Ninjas Mark, Digging Claw." },
+    { type: "Note", detail: "Most trinkets are found in chests, sold by settlers (Alchemist, Stylist, Gunsmith), or drop from specific enemies/bosses — search the item name directly for now if you need its exact source; this compendium will get individual entries for these over time." }
+  ]
+},
+{
+  name: "Guns (full named list)", category: "Weapon", icon: "🔫",
+  summary: "Additional gun-type weapons beyond Hand Cannon.",
+  sources: [
+    { type: "Listed", detail: "Handgun, Webbed Gun, Sapphire Revolver, Machine Gun, Snow Launcher, Shotgun, Sniper Rifle, Six Shooter, Flintlock, Death Ripper, Cryo Blaster, Living Shotty, Antique Rifle, Shard Cannon." },
+    { type: "Boss drops (confirmed)", detail: "Webbed Gun — possible drop from Queen Spider. Death Ripper — possible drop from Reaper. Cryo Blaster — possible drop from Cryo Queen. Antique Rifle — found/sold in the Desert Caves' Caveling Oasis area." }
+  ]
+},
+{
+  name: "Greatbows (full named list)", category: "Weapon", icon: "🏹",
+  summary: "Charged-shot heavy bow variant.",
+  sources: [
+    { type: "Listed", detail: "Gold Greatbow, Void Greatbow, Ivy Greatbow, Tungsten Greatbow, Mycelium Greatbow, Night Piercer, Slime Greatbow, Druids Greatbow." },
+    { type: "Note", detail: "Night Piercer is community-noted as one of the strongest weapons in the game — drops from enemies inside Graveyard Incursions." }
+  ]
+},
+
+// ===================== MOUNTS, PETS, POUCHES & MISC (Batch 7) =====================
+{
+  name: "Wood Boat", category: "Mount", icon: "🛶",
+  summary: "The earliest, easiest mount to get — crafted from the very start of the game.",
+  sources: [{ type: "Crafting", detail: "Craftable from the starting Workstation using 8 logs of any type." }],
+  usedFor: ["Travel across water — place in water or equip to mount slot, use with F key"]
+},
+{
+  name: "Steel Boat", category: "Mount", icon: "🚤",
+  summary: "Upgraded water mount.",
+  sources: [{ type: "Crafting", detail: "Crafted at a mid/late-tier crafting station using metal materials." }],
+  usedFor: ["Faster water travel than Wood Boat"]
+},
+{
+  name: "Tame Ostrich Mount", category: "Mount", icon: "🦤",
+  summary: "Land mount, slightly faster than the player on foot.",
+  sources: [{ type: "Summon item", detail: "Summoned using the Inefficient Feather." }],
+  usedFor: ["Land travel — also reduces movement speed penalty while attacking with melee"]
+},
+{
+  name: "Hoverboard", category: "Mount", icon: "🛹",
+  summary: "Later-game mount, useful for kiting bosses.",
+  sources: [{ type: "Quest reward", detail: "Obtained as a quest reward from the Elder, tied to defeating the Reaper boss — confirmed earlier." }]
+},
+{
+  name: "Jumping Ball", category: "Mount", icon: "🟠",
+  summary: "Mostly cosmetic mount — no real speed boost.",
+  sources: [{ type: "Note", detail: "Found or crafted; functions more as a novelty/cosmetic mount." }]
+},
+{
+  name: "Minecart", category: "Mount", icon: "🚃",
+  summary: "Rail-based transportation mount.",
+  sources: [{ type: "Note", detail: "Requires Minecart Tracks to be placed down first; used for fast settlement transit." }]
+},
+{
+  name: "Witch Broom", category: "Mount", icon: "🧹",
+  summary: "Flying/airborne mount.",
+  sources: [{ type: "Note", detail: "Likely tied to Witch-themed crafting or a specific NPC/event — exact source not yet independently confirmed in this compendium." }]
+},
+{
+  name: "Ring of Ascension", category: "Mount / Trophy Item", icon: "💍",
+  summary: "Final reward of the game.",
+  sources: [{ type: "Completion reward", detail: "Rewarded for defeating the Ascended Wizard, the current final boss — confirmed earlier." }]
+},
+{
+  name: "Pets (general)", category: "Pet", icon: "🐾",
+  summary: "Cosmetic-only summoned companions — they don't fight, just follow you.",
+  sources: [
+    { type: "Mechanic", detail: "Pets provide no combat bonuses (except Walking Torch, which lights up darkness). Can be summoned alongside Summons." },
+    { type: "Listed examples", detail: "Exotic Seeds, Eye in a Portal, Grizzly Cub, Magic Stilts, Thrumbo Horn, Wet Icicle, Walking Torch." }
+  ]
+},
+{
+  name: "Pouches & Bags (full list)", category: "Storage Item", icon: "🎒",
+  summary: "Extra storage/utility items, several tied to specific boss-kill quest rewards.",
+  sources: [
+    { type: "Listed", detail: "Ammo Bag, Ammo Pouch, Coin Pouch, Lunchbox, Portable Music Player, Potion Bag, Potion Pouch, Seed Pouch, Tablet Box, Void Bag, Void Pouch." },
+    { type: "Confirmed boss-quest rewards", detail: "Lunchbox (Evil's Protector), Ammo Pouch (Queen Spider), Void Pouch (Void Wizard), Coin Pouch (Pirate Captain), Void Bag (Fallen Wizard) — all confirmed earlier in this compendium." }
+  ]
+},
+{
+  name: "Call of the Sea", category: "Misc Item", icon: "🌊",
+  sources: [{ type: "Note", detail: "Listed under Necesse's general Miscellaneous category — exact function/source not yet independently confirmed." }]
+},
+
+// ===================== CRAFTING STATIONS (Batch 8 — complete official list) =====================
+{
+  name: "Workstation", category: "Crafting Station", icon: "🔧",
+  summary: "The very first crafting station — available from the start of the game.",
+  sources: [{ type: "Tier progression", detail: "Workstation → Tungsten Workstation → Demonic Workstation → Fallen Workstation, each unlocking higher-tier recipes." }]
+},
+{
+  name: "Iron Anvil", category: "Crafting Station", icon: "🔨",
+  summary: "Where most early weapons and armor are crafted.",
+  sources: [{ type: "Tier progression", detail: "Iron Anvil → Tungsten Anvil → Demonic Anvil → Fallen Anvil, each unlocking higher-tier weapon/armor recipes." }]
+},
+{
+  name: "Carpenters Bench", category: "Crafting Station", icon: "🪚",
+  summary: "Used for wood-based furniture and building crafting.",
+  sources: [{ type: "Tier progression", detail: "Carpenters Bench → Tungsten Carpenters Bench → Fallen Carpenters Bench." }]
+},
+{
+  name: "Landscaping Station", category: "Crafting Station", icon: "🏞️",
+  summary: "Used for terrain/block-shaping recipes.",
+  sources: [{ type: "Tier progression", detail: "Landscaping Station → Tungsten Landscaping Station → Fallen Landscaping Station." }]
+},
+{
+  name: "Alchemy Table", category: "Crafting Station", icon: "⚗️",
+  summary: "Used for potions and alchemy items.",
+  sources: [{ type: "Tier progression", detail: "Alchemy Table → Void Alchemy Table → Caveglow Alchemy Table → Fallen Alchemy Table." }]
+},
+{
+  name: "Forge", category: "Crafting Station", icon: "🔥",
+  summary: "Where raw Ores are smelted into Bars.",
+  sources: [{ type: "Use", detail: "Smelt Copper/Iron/Gold/Tungsten/etc. Ore (or broken tools) into their matching Bar." }]
+},
+{
+  name: "Cooking Station / Cooking Pot", category: "Crafting Station", icon: "🍳",
+  summary: "Where food recipes are cooked.",
+  sources: [{ type: "Note", detail: "Logs fuel them (2 min burn time) — or cook instantly without leaving the station running, at the cost of fuel per use." }]
+},
+{
+  name: "Roasting Station", category: "Crafting Station", icon: "🍢",
+  summary: "Specifically for roasting raw meats/fish.",
+  sources: [{ type: "Use", detail: "Turns raw meats (Raw Pork, Raw Mutton, etc.) into their Roasted versions." }]
+},
+{
+  name: "Cheese Press", category: "Crafting Station", icon: "🧀",
+  summary: "Turns Milk into Cheese.",
+  sources: [{ type: "Use", detail: "Processes Milk (from Cows) into Cheese." }]
+},
+{
+  name: "Upgrade Station", category: "Crafting Station", icon: "⬆️",
+  summary: "Used to upgrade equipment to higher tiers using Upgrade Shards.",
+  sources: [{ type: "Use", detail: "Spend Upgrade Shards (farmed mainly from Incursions) here to raise a weapon/armor piece's tier." }]
+},
+{
+  name: "Salvage Station", category: "Crafting Station", icon: "♻️",
+  summary: "Breaks down unwanted equipment back into materials.",
+  sources: [{ type: "Use", detail: "Salvaging higher-tier items here returns a larger amount of Upgrade Shards." }]
+},
+{
+  name: "Incinerator", category: "Crafting Station", icon: "🔥",
+  summary: "Destroys unwanted items, and items decay/incinerate at different rates.",
+  sources: [{ type: "Note", detail: "A disposal station — also relevant to incineration-based item mechanics added in later updates." }]
+},
+
+// ===================== WALLS, DOORS, FURNITURE & WIRING (Batch 9) =====================
+// These follow a material-family naming pattern rather than hundreds of unique recipes.
+{
+  name: "Walls (all material types)", category: "Building", icon: "🧱",
+  summary: "27 named wall types, mostly named after the wood/stone material used to craft them.",
+  sources: [
+    { type: "Wood-family", detail: "Wood, Pine, Oak, Birch, Maple, Spruce, Palm, Bamboo, Willow, Deadwood, Dryad Wall — crafted at the Carpenters Bench from the matching Log type." },
+    { type: "Stone-family", detail: "Stone, Sandstone, Granite, Basalt, Snow Stone, Swamp Stone, Deep Stone, Deep Sandstone, Deep Snow Stone, Deep Swamp Stone, Obsidian, Ice Wall — crafted from the matching mined stone material." },
+    { type: "Special/Incursion-exclusive", detail: "Ancient Ruin Wall, Arcanic Wall, Crypt Wall, Dawn Wall, Dusk Wall, Raven Wall, Spider Castle Wall — tied to specific Incursion biomes (Crystal Hollow, Sun/Moon Arena, Graveyard, Spider Castle respectively)." },
+    { type: "Note", detail: "Dungeon Wall cannot be crafted — it's a dungeon-only generation block, harvestable by mining/bombing." }
+  ]
+},
+{
+  name: "Doors (all material types)", category: "Building", icon: "🚪",
+  summary: "Mirrors the Wall material list exactly — 26 craftable types plus 2 uncraftable ones.",
+  sources: [
+    { type: "Mechanic", detail: "Doors open/close to let the player and NPCs through while blocking Raiders and Monsters. Can be wired with Wiring tools for automation." },
+    { type: "Crafting", detail: "Same material families as Walls (Wood/Pine/Oak/etc. for wood-tier, Stone/Sandstone/etc. for stone-tier, plus Incursion-exclusive doors)." },
+    { type: "Cannot be crafted", detail: "Dungeon Door and Ice Door — both must be found/harvested rather than crafted." }
+  ]
+},
+{
+  name: "Furniture (Beds, Bathtubs, Benches, Chairs, Tables, etc.)", category: "Furniture", icon: "🛋️",
+  summary: "Large decorative category — every furniture piece comes in the same ~12 wood-material variants (Bamboo, Birch, Bone, Deadwood, Dryad, Dungeon, Maple, Oak, Palm, Pine, Spruce, Willow).",
+  sources: [
+    { type: "Crafting", detail: "Crafted at the Carpenters Bench using the matching Log type (e.g. Oak Log → Oak Bed)." },
+    { type: "Functional pieces", detail: "Beds (required for sleeping/respawn point, some are Double Beds for 2 players), Bathtubs (hygiene/decoration), Benches (seating)." },
+    { type: "Special variants", detail: "Bone furniture is themed/found in specific biomes; Dungeon furniture must be harvested from actual Dungeons rather than crafted; Dryad furniture ties to Dryad-themed late content; Spider Castle Bench is Incursion-exclusive." },
+    { type: "Note", detail: "This category also includes Tables, Chairs, Bookshelves, Dressers, Lighting (lamps/torches/firefly jars), Rugs, Paintings, Clocks, and Storage furniture (Chests/Cabinets) — all following the same material-family pattern." }
+  ]
+},
+{
+  name: "Wiring — Wire & Switches", category: "Wiring", icon: "🔌",
+  summary: "The base components of any automated circuit.",
+  sources: [
+    { type: "Required tools", detail: "Wrench (places wire/edits gate properties) and Cutter (removes wire) — both needed to even see wiring, which is otherwise invisible." },
+    { type: "Wire", detail: "Connects Wiring items to Wirable Objects (Traps, Doors, Fence Gates, Lighting, TNT, Firework Dispenser). Can be colored red/green/blue/yellow for visual organization only — no functional difference." },
+    { type: "Switches", detail: "Pressure Plates (Wood, Stone, Sandstone, Snow Stone, Swamp Stone — triggered by anyone walking over them) and Rock Lever (manual player-only toggle)." }
+  ]
+},
+{
+  name: "Wiring — Logic Gates", category: "Wiring", icon: "🧮",
+  summary: "Used to build actual automated logic circuits — same concept as real digital logic gates.",
+  sources: [
+    { type: "Full list", detail: "AND Gate, Buffer Gate, Counter Gate, Delay Gate, NAND Gate, NOR Gate, OR Gate, SR Latch Gate, Sensor Gate, Sound Gate, T flip-flop Gate, Timer Gate, XOR Gate." },
+    { type: "Use", detail: "Place with the Wrench (left-click), edit properties with Wrench (right-click). Used for everything from simple light switches to complex 'Kill Maze' raider defenses." }
+  ]
+},
+{
+  name: "Wiring Displays & Wirable Objects", category: "Wiring", icon: "💡",
+  sources: [
+    { type: "LED Panel", detail: "A dedicated Wiring Display that visually shows the current state (on/off) of its wiring input." },
+    { type: "Other wirable objects", detail: "Lighting, Doors, Fence Gates, TNT, and Firework Dispenser can all double as wiring displays/outputs in a circuit." }
+  ]
+},
+
+// ===================== DUNGEON, TEMPLE & MINI-BIOME LOOT (Batch 10) =====================
+{
+  name: "Dungeon (full location)", category: "Location", icon: "🏛️",
+  summary: "A two-floor underground structure guarded by the Void Wizard boss.",
+  sources: [
+    { type: "Entry", detail: "Accessed via the Dungeon Entrance island (Forest Biome island type)." },
+    { type: "1st floor enemies", detail: "Enchanted Zombie, Enchanted Zombie Archer, Enchanted Crawling Zombie, Void Apprentice." },
+    { type: "1st floor treasure chest loot", detail: "Void Spear, Void Boomerang, Lightning Hammer, Mobility Cloak, Mesmer Tablet — confirmed directly from the official wiki." },
+    { type: "Void Shard source", detail: "Dropped by Void Apprentices and the Void Wizard — a key crafting material for armor/weapons." },
+    { type: "Recruitable NPC", detail: "Mage Settlers can be rescued here (multiple can spawn per Dungeon)." },
+    { type: "2nd floor", detail: "The Void Wizard's domain — boss fight floor." }
+  ]
+},
+{
+  name: "Runebound Chieftain", category: "Boss", icon: "🪓",
+  summary: "A boss found in the Plains Caves — not part of the originally-documented 11 main bosses, but confirmed via the official Caves page.",
+  sources: [{ type: "Summon", detail: "Place a Bone Offering on the pedestal in his arena, located in the Plains Caves." }]
+},
+{
+  name: "The Cursed Crone", category: "Boss", icon: "🧙‍♀️",
+  summary: "Boss of the Plains Deep Caves.",
+  sources: [{ type: "Location", detail: "Found in the Plains Deep Caves — the second underground level of the Plains Biome." }]
+},
+{
+  name: "Mini Biome — Underground Ruins", category: "Mini Biome", icon: "🏺",
+  summary: "Found in Forest and Snow Caves.",
+  sources: [{ type: "Loot", detail: "Random furniture, plus one chest with Crops/Fruits/Seeds/Saplings matching the biome, plus Potions, Coins, and Ammo." }]
+},
+{
+  name: "Mini Biome — Crypts", category: "Mini Biome", icon: "⚰️",
+  summary: "Vampire-infested mini biome.",
+  sources: [
+    { type: "Loot", detail: "Grave Stones drop random loot when mined with a Pickaxe. Stone Coffins contain the Bloodplate Set, Vampires Gift, and other loot — confirmed." },
+    { type: "Enemy", detail: "Vampires spawn here." }
+  ]
+},
+{
+  name: "Mini Biome — Treasure Rooms", category: "Mini Biome", icon: "💰",
+  summary: "Found in all Caves, with or without traps.",
+  sources: [{ type: "Loot", detail: "One chest with Equipment, Materials, Consumables, and other loot matching the surrounding biome. Also has Coin Stacks, Vases, and Crates that drop loot when destroyed." }]
+},
+{
+  name: "Mini Biome — Trial Rooms", category: "Mini Biome", icon: "🧩",
+  summary: "Puzzle/maze rooms with a guaranteed payout.",
+  sources: [{ type: "Loot", detail: "Completing the trial (memory puzzle or trap-timing maze) rewards 2 chests of biome-matching loot plus several piles of Coins." }]
+},
+{
+  name: "Caveling Oasis (Desert) / Coral Biome (Swamp)", category: "Mini Biome", icon: "🌴",
+  summary: "Secret illuminated sub-areas hidden inside Desert and Swamp Deep Caves respectively.",
+  sources: [
+    { type: "Desert version", detail: "Caveling Oasis has an Overgrown Fountain, Caveling Paintings, and 2 each of 4 Caveling types — a source of early Tungsten Ore and Life Quartz." },
+    { type: "Swamp version", detail: "Coral Biome — found in Swamp Deep Caves, illuminated and easily visible." }
+  ]
+},
+{
+  name: "Ancient Statue Mini Biome", category: "Mini Biome", icon: "🗿",
+  summary: "Found in Desert Caves — smashing the statue summons a boss.",
+  sources: [
+    { type: "Loot", detail: "Crates and vases full of treasure." },
+    { type: "Warning", detail: "Breaking the Ancient Statue itself summons the Ancient Vulture boss — only do this if prepared to fight." }
+  ]
+}
+,
+
+// ===================== COOKED FOOD RECIPES =====================
+// Sourced from necessewiki.com/Category:Food (69 entries total)
+// Roasted = Roasting Station; everything else = Cooking Pot / Cooking Station
+// Food tiers: Simple (+10% settler happiness) | Fine (+20%) | Gourmet (+35%)
+
+// --- Roasted (Simple Food — Roasting Station) ---
+{
+  name: "Roasted Pork", category: "Cooked Food", icon: "🍖",
+  summary: "Simple Food. Roast Raw Pork at a Roasting Station.",
+  sources: [{ type: "Roasting Station", detail: "1× Raw Pork → Roasted Pork. Raw Pork from Pigs (Forest Biome) or Pig Pen." }],
+  usedFor: ["Eating (hunger/buff)", "Settler diet (Simple Food tier)"]
+},
+{
+  name: "Roasted Mutton", category: "Cooked Food", icon: "🍖",
+  summary: "Simple Food. Roast Raw Mutton.",
+  sources: [{ type: "Roasting Station", detail: "1× Raw Mutton → Roasted Mutton. Raw Mutton from Sheep." }],
+  usedFor: ["Eating (hunger/buff)", "Settler diet"]
+},
+{
+  name: "Roasted Rabbit Leg", category: "Cooked Food", icon: "🍗",
+  summary: "Simple Food.",
+  sources: [{ type: "Roasting Station", detail: "1× Rabbit Leg → Roasted Rabbit Leg. Rabbit Leg from Rabbits/Snow Hares." }],
+  usedFor: ["Eating", "Settler diet"]
+},
+{
+  name: "Roasted Duck Breast", category: "Cooked Food", icon: "🍗",
+  summary: "Simple Food. Good early settler food since Hunters auto-collect Duck Breast.",
+  sources: [{ type: "Roasting Station", detail: "1× Duck Breast → Roasted Duck Breast. Duck Breast from Ducks (all biomes)." }],
+  usedFor: ["Eating", "Settler diet — recommended Hunter settler auto-cook"]
+},
+{
+  name: "Roasted Frog Leg", category: "Cooked Food", icon: "🍗",
+  summary: "Simple Food.",
+  sources: [{ type: "Roasting Station", detail: "1× Frog Leg → Roasted Frog Leg. Frog Leg from Frogs (Swamp Biome)." }],
+  usedFor: ["Eating", "Settler diet"]
+},
+{
+  name: "Roasted Fish", category: "Cooked Food", icon: "🐟",
+  summary: "Simple Food. Works with Carp, Trout, or Salmon.",
+  sources: [{ type: "Roasting Station", detail: "1× Fish (Carp/Trout/Salmon) → Roasted Fish." }],
+  usedFor: ["Eating", "Settler diet"]
+},
+{
+  name: "Fried Egg", category: "Cooked Food", icon: "🍳",
+  summary: "Simple Food.",
+  sources: [{ type: "Cooking Pot", detail: "1× Egg → Fried Egg. Eggs from Chickens in a Chicken Coop." }],
+  usedFor: ["Eating", "Settler diet"]
+},
+{
+  name: "Hard Boiled Egg", category: "Cooked Food", icon: "🥚",
+  summary: "Simple Food.",
+  sources: [{ type: "Cooking Pot", detail: "1× Egg → Hard Boiled Egg." }],
+  usedFor: ["Eating", "Settler diet"]
+},
+{
+  name: "Scrambled Eggs", category: "Cooked Food", icon: "🍳",
+  summary: "Fine Food.",
+  sources: [{ type: "Cooking Pot", detail: "2× Egg + 1× Milk → Scrambled Eggs." }],
+  usedFor: ["Eating", "Settler diet (Fine Food tier)"]
+},
+{
+  name: "Fried Pork", category: "Cooked Food", icon: "🥓",
+  summary: "Fine Food.",
+  sources: [{ type: "Cooking Pot", detail: "1× Raw Pork + 1× Onion → Fried Pork." }],
+  usedFor: ["Eating", "Settler diet"]
+},
+{
+  name: "Chicken Drumstick", category: "Cooked Food", icon: "🍗",
+  summary: "Fine Food.",
+  sources: [{ type: "Roasting Station", detail: "1× Raw Chicken Leg → Chicken Drumstick." }],
+  usedFor: ["Eating", "Settler diet"]
+},
+{
+  name: "Popcorn", category: "Cooked Food", icon: "🍿",
+  summary: "Fine Food.",
+  sources: [{ type: "Cooking Pot", detail: "3× Corn → Popcorn." }],
+  usedFor: ["Eating", "Settler diet"]
+},
+{
+  name: "Bread", category: "Cooked Food", icon: "🍞",
+  summary: "Fine Food. Key ingredient in Gourmet recipes — keep some in stock, don't let settlers eat it all.",
+  sources: [{ type: "Cooking Pot", detail: "3× Flour → Bread. Flour from milling Wheat at the Grain Mill." }],
+  usedFor: ["Eating", "Settler diet", "Ingredient for Hotdog, Cheese Burger, Junior Burger, Meatballs, and others"]
+},
+{
+  name: "Black Coffee", category: "Cooked Food", icon: "☕",
+  summary: "Fine Food. Boosts movement speed.",
+  sources: [{ type: "Cooking Pot", detail: "1× Ground Coffee + 1× Water Bucket → Black Coffee. Ground Coffee: mill Coffee Beans at Grain Mill." }],
+  usedFor: ["Eating (speed buff)", "Settler diet"]
+},
+{
+  name: "Raspberry Juice", category: "Cooked Food", icon: "🥤",
+  summary: "Fine Food.",
+  sources: [{ type: "Cooking Pot", detail: "3× Raspberry → Raspberry Juice." }],
+  usedFor: ["Eating", "Settler diet"]
+},
+{
+  name: "Raspberry Jam", category: "Cooked Food", icon: "🍓",
+  summary: "Fine Food / Ingredient.",
+  sources: [{ type: "Cooking Pot", detail: "3× Raspberry + 1× Sugar → Raspberry Jam." }],
+  usedFor: ["Eating", "Ingredient for Raspberry Mousse, Dessert Pancakes"]
+},
+
+// --- Gourmet Food (Cooking Pot / Cooking Station) ---
+{
+  name: "Lemon Tart", category: "Cooked Food", icon: "🍋",
+  summary: "Gourmet Food. Gives +20 Max Health buff.",
+  sources: [{ type: "Cooking Pot", detail: "1× Lemon + 1× Flour + 1× Milk + 1× Sugar → Lemon Tart." }],
+  usedFor: ["Eating (+Max HP buff)", "Settler diet (Gourmet tier)"]
+},
+{
+  name: "Pumpkin Pie", category: "Cooked Food", icon: "🥧",
+  summary: "Gourmet Food.",
+  sources: [{ type: "Cooking Pot", detail: "1× Pumpkin + 1× Flour + 1× Milk + 1× Sugar → Pumpkin Pie." }],
+  usedFor: ["Eating", "Settler diet"]
+},
+{
+  name: "Cookies", category: "Cooked Food", icon: "🍪",
+  summary: "Gourmet Food.",
+  sources: [{ type: "Cooking Pot", detail: "1× Flour + 1× Butter + 1× Sugar → Cookies." }],
+  usedFor: ["Eating", "Settler diet"]
+},
+{
+  name: "Donut", category: "Cooked Food", icon: "🍩",
+  summary: "Gourmet Food.",
+  sources: [{ type: "Cooking Pot", detail: "1× Flour + 1× Milk + 1× Sugar + 1× Egg → Donut." }],
+  usedFor: ["Eating", "Settler diet"]
+},
+{
+  name: "Candy Apple", category: "Cooked Food", icon: "🍎",
+  summary: "Gourmet Food.",
+  sources: [{ type: "Cooking Pot", detail: "1× Apple + 1× Sugar → Candy Apple." }],
+  usedFor: ["Eating", "Settler diet"]
+},
+{
+  name: "Candy Cane", category: "Cooked Food", icon: "🍬",
+  summary: "Gourmet Food (seasonal).",
+  sources: [{ type: "Cooking Pot", detail: "1× Sugar + 1× Raspberry → Candy Cane." }],
+  usedFor: ["Eating", "Settler diet"]
+},
+{
+  name: "Cheesy Beet Bowl", category: "Cooked Food", icon: "🥣",
+  summary: "Gourmet Food.",
+  sources: [{ type: "Cooking Pot", detail: "1× Sugar Beet + 1× Cheese → Cheesy Beet Bowl. Cheese from Cheese Press (Milk → Cheese)." }],
+  usedFor: ["Eating", "Settler diet"]
+},
+{
+  name: "Cheese Burger", category: "Cooked Food", icon: "🍔",
+  summary: "Gourmet Food.",
+  sources: [{ type: "Cooking Pot", detail: "1× Beef + 1× Bread + 1× Cheese + 1× Tomato → Cheese Burger." }],
+  usedFor: ["Eating", "Settler diet"]
+},
+{
+  name: "Junior Burger", category: "Cooked Food", icon: "🍔",
+  summary: "Gourmet Food (lower tier than Cheese Burger).",
+  sources: [{ type: "Cooking Pot", detail: "1× Raw Pork + 1× Bread + 1× Tomato → Junior Burger." }],
+  usedFor: ["Eating", "Settler diet"]
+},
+{
+  name: "Hotdog", category: "Cooked Food", icon: "🌭",
+  summary: "Gourmet Food.",
+  sources: [{ type: "Cooking Pot", detail: "1× Raw Pork + 1× Bread → Hotdog." }],
+  usedFor: ["Eating", "Settler diet"]
+},
+{
+  name: "Meatballs", category: "Cooked Food", icon: "🍝",
+  summary: "Gourmet Food.",
+  sources: [{ type: "Cooking Pot", detail: "2× Beef + 1× Bread + 1× Onion → Meatballs." }],
+  usedFor: ["Eating", "Settler diet"]
+},
+{
+  name: "Beef Goulash", category: "Cooked Food", icon: "🥘",
+  summary: "Gourmet Food.",
+  sources: [{ type: "Cooking Pot", detail: "1× Beef + 1× Carrot + 1× Potato + 1× Tomato → Beef Goulash." }],
+  usedFor: ["Eating", "Settler diet"]
+},
+{
+  name: "Parisian Steak", category: "Cooked Food", icon: "🥩",
+  summary: "Gourmet Food (high tier).",
+  sources: [{ type: "Cooking Pot", detail: "2× Beef + 1× Onion → Parisian Steak." }],
+  usedFor: ["Eating", "Settler diet"]
+},
+{
+  name: "Pork Tenderloin", category: "Cooked Food", icon: "🍖",
+  summary: "Gourmet Food.",
+  sources: [{ type: "Cooking Pot", detail: "2× Raw Pork + 1× Carrot + 1× Potato → Pork Tenderloin." }],
+  usedFor: ["Eating", "Settler diet"]
+},
+{
+  name: "Eggplant Parmesan", category: "Cooked Food", icon: "🍆",
+  summary: "Gourmet Food.",
+  sources: [{ type: "Cooking Pot", detail: "2× Eggplant + 1× Cheese + 1× Tomato → Eggplant Parmesan." }],
+  usedFor: ["Eating", "Settler diet"]
+},
+{
+  name: "Nachos", category: "Cooked Food", icon: "🌮",
+  summary: "Gourmet Food.",
+  sources: [{ type: "Cooking Pot", detail: "2× Corn + 1× Chili Pepper + 1× Cheese → Nachos." }],
+  usedFor: ["Eating", "Settler diet"]
+},
+{
+  name: "Fresh Potato Salad", category: "Cooked Food", icon: "🥗",
+  summary: "Gourmet Food.",
+  sources: [{ type: "Cooking Pot", detail: "2× Potato + 1× Onion + 1× Carrot → Fresh Potato Salad." }],
+  usedFor: ["Eating", "Settler diet"]
+},
+{
+  name: "Omelette", category: "Cooked Food", icon: "🍳",
+  summary: "Gourmet Food.",
+  sources: [{ type: "Cooking Pot", detail: "2× Egg + 1× Tomato + 1× Onion → Omelette." }],
+  usedFor: ["Eating", "Settler diet"]
+},
+{
+  name: "Fish and Chips", category: "Cooked Food", icon: "🐟",
+  summary: "Gourmet Food.",
+  sources: [{ type: "Cooking Pot", detail: "1× Fish + 2× Potato → Fish and Chips." }],
+  usedFor: ["Eating", "Settler diet"]
+},
+{
+  name: "Fish Taco", category: "Cooked Food", icon: "🌮",
+  summary: "Gourmet Food.",
+  sources: [{ type: "Cooking Pot", detail: "1× Fish + 1× Corn + 1× Cabbage → Fish Taco." }],
+  usedFor: ["Eating", "Settler diet"]
+},
+{
+  name: "Sushi Rolls", category: "Cooked Food", icon: "🍱",
+  summary: "Gourmet Food.",
+  sources: [{ type: "Cooking Pot", detail: "1× Fish + 1× Rice → Sushi Rolls." }],
+  usedFor: ["Eating", "Settler diet"]
+},
+{
+  name: "Deep Fried Chicken", category: "Cooked Food", icon: "🍗",
+  summary: "Gourmet Food.",
+  sources: [{ type: "Cooking Pot", detail: "1× Raw Chicken Leg + 1× Flour → Deep Fried Chicken." }],
+  usedFor: ["Eating", "Settler diet"]
+},
+{
+  name: "Chicken Cutlet Dish", category: "Cooked Food", icon: "🍽️",
+  summary: "Gourmet Food.",
+  sources: [{ type: "Cooking Pot", detail: "1× Raw Chicken Leg + 1× Onion + 1× Carrot → Chicken Cutlet Dish." }],
+  usedFor: ["Eating", "Settler diet"]
+},
+{
+  name: "Miners Stew", category: "Cooked Food", icon: "🥣",
+  summary: "Gourmet Food. Mining-speed buff.",
+  sources: [{ type: "Cooking Pot", detail: "1× Beef + 1× Carrot + 1× Onion + 1× Potato → Miners Stew." }],
+  usedFor: ["Eating (mining speed buff)", "Settler diet"]
+},
+{
+  name: "Banana Pudding", category: "Cooked Food", icon: "🍌",
+  summary: "Gourmet Food.",
+  sources: [{ type: "Cooking Pot", detail: "2× Banana + 1× Milk + 1× Sugar → Banana Pudding." }],
+  usedFor: ["Eating", "Settler diet"]
+},
+{
+  name: "Blueberry Cake", category: "Cooked Food", icon: "🫐",
+  summary: "Gourmet Food.",
+  sources: [{ type: "Cooking Pot", detail: "3× Blueberry + 1× Flour + 1× Sugar → Blueberry Cake." }],
+  usedFor: ["Eating", "Settler diet"]
+},
+{
+  name: "Blackberry Ice Cream", category: "Cooked Food", icon: "🍦",
+  summary: "Gourmet Food.",
+  sources: [{ type: "Cooking Pot", detail: "3× Blackberry + 1× Milk + 1× Sugar → Blackberry Ice Cream." }],
+  usedFor: ["Eating", "Settler diet"]
+},
+{
+  name: "Raspberry Mousse", category: "Cooked Food", icon: "🍓",
+  summary: "Gourmet Food (high tier).",
+  sources: [{ type: "Cooking Pot", detail: "1× Raspberry Jam + 1× Milk → Raspberry Mousse." }],
+  usedFor: ["Eating", "Settler diet"]
+},
+{
+  name: "Raspberry Pie", category: "Cooked Food", icon: "🥧",
+  summary: "Gourmet Food. Boosts mana and spell damage.",
+  sources: [{ type: "Cooking Pot", detail: "3× Raspberry + 1× Flour + 1× Sugar → Raspberry Pie." }],
+  usedFor: ["Eating (mana/spell damage buff)", "Settler diet"]
+},
+{
+  name: "Dessert Pancakes", category: "Cooked Food", icon: "🥞",
+  summary: "Gourmet Food.",
+  sources: [{ type: "Cooking Pot", detail: "1× Flour + 1× Egg + 1× Raspberry Jam → Dessert Pancakes." }],
+  usedFor: ["Eating", "Settler diet"]
+},
+{
+  name: "Fruit Smoothie", category: "Cooked Food", icon: "🥤",
+  summary: "Gourmet Food.",
+  sources: [{ type: "Cooking Pot", detail: "Combination of fruits (Apple/Banana/Strawberry) + Milk → Fruit Smoothie." }],
+  usedFor: ["Eating", "Settler diet"]
+},
+{
+  name: "Cappuccino", category: "Cooked Food", icon: "☕",
+  summary: "Gourmet Food. Boosts movement speed (better than Black Coffee).",
+  sources: [{ type: "Cooking Pot", detail: "1× Ground Coffee + 1× Milk + 1× Sugar → Cappuccino." }],
+  usedFor: ["Eating (speed buff)", "Settler diet"]
+},
+{
+  name: "Cheese", category: "Cooked Food", icon: "🧀",
+  summary: "Fine Food / Ingredient. Made at the Cheese Press, not the Cooking Pot.",
+  sources: [{ type: "Cheese Press", detail: "1× Milk → Cheese. Requires a Cheese Press crafting station." }],
+  usedFor: ["Eating", "Ingredient for Cheesy Beet Bowl, Cheese Burger, Eggplant Parmesan, Nachos"]
+},
+
+// ===================== ENCHANTMENTS =====================
+{
+  name: "Enchanting (system overview)", category: "Enchantment", icon: "✨",
+  summary: "Enchanting is done by a Mage settler for coins. A happier Mage = higher chance of good enchantments. Bad enchantments (debuffs) are also possible.",
+  sources: [
+    { type: "How to access", detail: "Recruit a Mage to your settlement (found in Villages or tied up in Dungeons). Talk to them and select 'Enchant'." },
+    { type: "Cost", detail: "Coins — cost scales with item tier and Mage happiness. Higher Mage happiness = lower cost and better odds of positive outcomes." },
+    { type: "Re-enchanting", detail: "You can enchant an already-enchanted item to replace the old enchantment. Cannot choose the outcome — it is random." }
+  ]
+},
+{
+  name: "Trinket & Armor Enchantments", category: "Enchantment", icon: "🛡️",
+  summary: "Enchantments that apply to trinkets and armor pieces.",
+  sources: [
+    { type: "Bulky", detail: "+Armor value. More damage mitigation per hit — less useful in Brutal Mode where enemies hit extremely hard." },
+    { type: "Speedy", detail: "+Movement speed." },
+    { type: "Agile", detail: "+Dodge chance." },
+    { type: "Lucky", detail: "+Luck (affects loot drop rates)." },
+    { type: "Wise", detail: "+Mana capacity." },
+    { type: "Healthy", detail: "+Max health." },
+    { type: "Regenerating", detail: "+Health regen rate." },
+    { type: "Bad enchantments", detail: "Fragile (−Armor), Slow (−Speed), Clumsy (−Dodge), Unlucky (−Luck), and others can also appear." }
+  ]
+},
+{
+  name: "Melee Weapon Enchantments", category: "Enchantment", icon: "⚔️",
+  summary: "Enchantments that apply to melee weapons (Swords, Spears, Glaives, etc.).",
+  sources: [
+    { type: "Strong", detail: "+Melee damage." },
+    { type: "Swift", detail: "+Attack speed." },
+    { type: "Vampiric", detail: "Life steal on hit — heals player for a % of damage dealt." },
+    { type: "Fiery", detail: "Applies Burning debuff to enemies on hit (DoT)." },
+    { type: "Icy", detail: "Applies Slow to enemies on hit." },
+    { type: "Poisonous", detail: "Applies Poison DoT on hit." },
+    { type: "Bad enchantments", detail: "Weak (−Damage), Sluggish (−Attack speed), and others." }
+  ]
+},
+{
+  name: "Ranged Weapon Enchantments", category: "Enchantment", icon: "🏹",
+  summary: "Enchantments that apply to Bows, Greatbows, and Guns.",
+  sources: [
+    { type: "Powerful", detail: "+Ranged damage." },
+    { type: "Rapid", detail: "+Fire rate / attack speed." },
+    { type: "Piercing", detail: "Projectiles pierce through enemies." },
+    { type: "Explosive", detail: "Projectiles deal AoE damage on impact." },
+    { type: "Bad enchantments", detail: "Feeble (−Damage), Slow (−Fire rate), and others." }
+  ]
+},
+{
+  name: "Magic Weapon Enchantments", category: "Enchantment", icon: "🪄",
+  summary: "Enchantments that apply to Magic weapons and staves.",
+  sources: [
+    { type: "Arcane", detail: "+Magic damage output." },
+    { type: "Efficient", detail: "−Mana cost per cast." },
+    { type: "Channeling", detail: "+Mana regen rate while equipped." },
+    { type: "Bad enchantments", detail: "Dull (−Magic damage), Costly (−Mana efficiency), and others." }
+  ]
+},
+{
+  name: "Summon Weapon Enchantments", category: "Enchantment", icon: "👻",
+  summary: "Enchantments that apply to Summon weapons.",
+  sources: [
+    { type: "Commanding", detail: "+Summon damage." },
+    { type: "Summoning", detail: "+1 max summon slots (very powerful — essentially a free extra minion)." },
+    { type: "Bad enchantments", detail: "Weak (−Summon damage), and others." }
+  ]
+},
+{
+  name: "Tool Enchantments", category: "Enchantment", icon: "⛏️",
+  summary: "Enchantments for Pickaxes, Axes, Shovels, and Fishing Rods.",
+  sources: [
+    { type: "Efficient", detail: "+Mining/chopping/digging speed." },
+    { type: "Fortunate", detail: "+Chance to drop bonus resources when mining/chopping." },
+    { type: "Durable", detail: "+Tool durability (slower item degradation)." },
+    { type: "Fisher's enchantments", detail: "Angler (+Fishing Power), Lucky (bonus rare catches)." }
+  ]
+},
+
+// ===================== TRINKET SLOT UNLOCKS =====================
+{
+  name: "Empty Pendant", category: "Trinket Slot Unlock", icon: "📿",
+  summary: "Consumable — permanently increases max trinket slots from 4 → 5. Dropped by Void Wizard.",
+  sources: [
+    { type: "Boss drop", detail: "Dropped by the Void Wizard (Dungeon 2nd floor boss) on first kill. Use it from your inventory to permanently unlock the 5th trinket slot." },
+    { type: "Warning", detail: "If you use Pirate Sheath or Wizard Socket BEFORE this, Empty Pendant becomes unusable (your slots skip ahead and this one is bypassed)." }
+  ]
+},
+{
+  name: "Pirate Sheath", category: "Trinket Slot Unlock", icon: "⚔️",
+  summary: "Consumable — permanently increases max trinket slots from 5 → 6. Dropped by Pirate Captain.",
+  sources: [
+    { type: "Boss drop", detail: "Dropped by the Pirate Captain on first kill. Use it to permanently unlock the 6th trinket slot." },
+    { type: "Warning", detail: "Use Empty Pendant first (from Void Wizard). If you skip the order, earlier unlocks become unusable." }
+  ]
+},
+{
+  name: "Wizard Socket", category: "Trinket Slot Unlock", icon: "🔮",
+  summary: "Consumable — permanently increases max trinket slots from 6 → 7. Dropped by Fallen Wizard.",
+  sources: [
+    { type: "Boss drop", detail: "Dropped by the Fallen Wizard (inside the Temple, post-Sage & Grit). Unlocks the 7th trinket slot permanently." },
+    { type: "Warning", detail: "Using this before Empty Pendant or Pirate Sheath will still raise slots to 7, but the prior items become unusable." }
+  ]
+},
+{
+  name: "Wormhole Locket", category: "Trinket Slot Unlock", icon: "🌀",
+  summary: "Consumable — permanently increases max trinket slots from 7 → 8 (current maximum as of v1.1.1). Settlement quest reward.",
+  sources: [
+    { type: "Settlement quest reward", detail: "Obtained by completing a Tier 5 Incursion or higher and turning in the related Elder settlement quest. Not a boss drop." },
+    { type: "Warning", detail: "Using this before the earlier pendants/sheaths still raises slots to 8 but makes the prior items unusable." }
+  ]
+}
+
+];
+
+</script>
+<script>
+  const grid = document.getElementById('grid');
+  const searchInput = document.getElementById('searchInput');
+  const filtersEl = document.getElementById('filters');
+  const resultsMeta = document.getElementById('resultsMeta');
+  const modalOverlay = document.getElementById('modalOverlay');
+  const modalContent = document.getElementById('modalContent');
+
+  let activeCategory = 'All';
+
+  function catClass(cat){
+    return 'cat-' + cat.replace(/[\s/&]+/g, '-');
+  }
+
+  const categoryGroups = {
+    'All': () => true,
+    'Crops & Farming': c => /Crop|Fruit|Flower|Ingredient/.test(c),
+    'Food & Fish': c => /Raw Food|Fish|Cooked Food/.test(c),
+    'Bosses': c => /Boss/.test(c) && !/Incursion/.test(c),
+    'Incursions': c => /Incursion/.test(c),
+    'Biomes': c => c === 'Biome',
+    'Ores & Bars': c => /Ore|Bar|Gem|Mineral/.test(c),
+    'Tools': c => c === 'Tool',
+    'Weapons': c => /Weapon|Ammo|Summon/.test(c),
+    'Armor & Trinkets': c => /Armor|Trinket|Item Set|Cosmetic/.test(c),
+    'Enchantments': c => c === 'Enchantment',
+    'Mounts & Pets': c => /Mount|Pet|Storage|Misc Item/.test(c),
+    'Building & Wiring': c => /Building|Furniture|Wiring/.test(c),
+    'Crafting Stations': c => c === 'Crafting Station',
+    'Locations': c => /Location|Mini Biome/.test(c),
+  };
+
+  Object.keys(categoryGroups).forEach(label => {
+    const chip = document.createElement('div');
+    chip.className = 'chip' + (label === 'All' ? ' active' : '');
+    chip.textContent = label;
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      activeCategory = label;
+      render();
+    });
+    filtersEl.appendChild(chip);
+  });
+
+  function matchesCategory(item){
+    if(activeCategory === 'All') return true;
+    return categoryGroups[activeCategory](item.category);
+  }
+
+  function matchesSearch(item, q){
+    if(!q) return true;
+    q = q.toLowerCase();
+    if(item.name.toLowerCase().includes(q)) return true;
+    if(item.category.toLowerCase().includes(q)) return true;
+    if(item.summary && item.summary.toLowerCase().includes(q)) return true;
+    if(item.sources && item.sources.some(s => (s.type + ' ' + s.detail).toLowerCase().includes(q))) return true;
+    if(item.usedFor && item.usedFor.some(u => u.toLowerCase().includes(q))) return true;
+    return false;
+  }
+
+  function render(){
+    const q = searchInput.value.trim();
+    const results = NECESSE_DB.filter(item => matchesCategory(item) && matchesSearch(item, q));
+    grid.innerHTML = '';
+
+    if(results.length === 0){
+      grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="glyph">⚱</div><div>No entries found. Try a different search term — e.g. "lemon," "sugar," or "queen spider."</div></div>';
+      resultsMeta.textContent = '';
+      return;
+    }
+
+    resultsMeta.textContent = results.length + ' entr' + (results.length === 1 ? 'y' : 'ies') + ' found';
+
+    results.forEach(item => {
+      const card = document.createElement('div');
+      card.className = 'card ' + catClass(item.category);
+      card.innerHTML =
+        '<div class="card-top">' +
+          '<div class="card-icon">' + (item.icon || '❖') + '</div>' +
+          '<div>' +
+            '<p class="card-name">' + item.name + '</p>' +
+            '<span class="card-cat">' + item.category + '</span>' +
+          '</div>' +
+        '</div>' +
+        (item.summary ? '<p class="card-summary">' + item.summary + '</p>' : '') +
+        '<div class="card-hint">' + item.sources.length + ' source' + (item.sources.length > 1 ? 's' : '') + ' listed — click to view</div>';
+      card.addEventListener('click', () => openModal(item));
+      grid.appendChild(card);
+    });
+  }
+
+  function openModal(item){
+    modalContent.className = 'modal ' + catClass(item.category);
+    let html =
+      '<button class="modal-close" id="modalCloseBtn">✕</button>' +
+      '<div class="modal-header">' +
+        '<div class="modal-icon">' + (item.icon || '❖') + '</div>' +
+        '<div>' +
+          '<h2 class="modal-title">' + item.name + '</h2>' +
+          '<span class="modal-cat">' + item.category + '</span>' +
+        '</div>' +
+      '</div>' +
+      (item.summary ? '<p class="modal-summary">' + item.summary + '</p>' : '') +
+      '<div class="section-label">Where to get it / Details</div>';
+
+    item.sources.forEach(s => {
+      html += '<div class="source-item"><span class="source-type">' + s.type + '</span>' + s.detail + '</div>';
+    });
+
+    if(item.usedFor && item.usedFor.length){
+      html += '<div class="section-label">Used for</div><ul class="used-for-list">';
+      item.usedFor.forEach(u => { html += '<li>' + u + '</li>'; });
+      html += '</ul>';
+    }
+
+    modalContent.innerHTML = html;
+    document.getElementById('modalCloseBtn').addEventListener('click', closeModal);
+    modalOverlay.classList.add('show');
+  }
+
+  function closeModal(){
+    modalOverlay.classList.remove('show');
+  }
+
+  modalOverlay.addEventListener('click', e => {
+    if(e.target === modalOverlay) closeModal();
+  });
+  document.addEventListener('keydown', e => {
+    if(e.key === 'Escape') closeModal();
+  });
+
+  searchInput.addEventListener('input', render);
+  render();
+</script>
+
+</body>
+</html>
